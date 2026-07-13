@@ -21,15 +21,18 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { BookOpen, Home, Lightbulb, LogOut, PanelLeft, PenLine, PlusCircle } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: Home, label: "ホーム", path: "/" },
+  { icon: PenLine, label: "気づきを書く", path: "/insights/new" },
+  { icon: Lightbulb, label: "みんなの気づき", path: "/insights" },
+  { icon: PlusCircle, label: "改善事例を作る", path: "/improvements/new" },
+  { icon: BookOpen, label: "改善ライブラリ", path: "/improvements" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -58,23 +61,28 @@ export default function DashboardLayout({
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-          <div className="flex flex-col items-center gap-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-center">
-              Sign in to continue
-            </h1>
-            <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
-            </p>
+      <div className="min-h-screen grid lg:grid-cols-[1.15fr_.85fr] bg-[#f5f1e8]">
+        <div className="hidden lg:flex relative overflow-hidden bg-[#173f3a] text-white p-14 flex-col justify-between">
+          <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(circle at 20% 20%, #d0a75d 0 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+          <div className="relative flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10"><span className="knowledge-mark knowledge-mark-light" aria-hidden /></div><span className="font-semibold tracking-[0.18em] text-sm">KAIZEN VISION</span></div>
+          <div className="relative max-w-xl"><p className="text-[#e3c383] text-xs tracking-[0.2em] font-semibold mb-6">SMALL INSIGHTS, LASTING CHANGE</p><h1 className="font-serif text-5xl leading-[1.35] tracking-tight">小さな気づきを、<br />組織の知恵に。</h1><p className="mt-8 text-white/65 leading-8 max-w-lg">現場で生まれた発見と改善を、チームの誰もが学べる資産として積み重ねる場所です。</p></div>
+          <p className="relative text-xs text-white/40">Knowledge grows when it is shared.</p>
+        </div>
+        <div className="flex items-center justify-center px-6 py-12">
+          <div className="editorial-card flex flex-col gap-8 p-8 sm:p-11 max-w-md w-full rounded-[2rem] border border-white/70">
+            <div className="flex flex-col gap-4">
+              <p className="eyebrow">Welcome back</p>
+              <h2 className="page-title text-3xl font-semibold">チームの知恵へ<br />アクセスする</h2>
+              <p className="text-sm leading-7 text-muted-foreground">Manusアカウントでログインすると、気づきの投稿や改善事例の共有を始められます。</p>
           </div>
           <Button
             onClick={() => startLogin()}
             size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all"
+            className="w-full h-12 rounded-xl shadow-[0_14px_30px_-15px_rgba(23,63,58,.65)]"
           >
-            Sign in
+            Manusでログイン
           </Button>
+          </div>
         </div>
       </div>
     );
@@ -168,9 +176,7 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold tracking-tight truncate">
-                    Navigation
-                  </span>
+                  <div className="flex items-center gap-2"><span className="knowledge-mark" aria-hidden /><span className="font-semibold tracking-[0.12em] text-xs truncate">KAIZEN VISION</span></div>
                 </div>
               ) : null}
             </div>
@@ -224,7 +230,7 @@ function DashboardLayoutContent({
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
+                  <span>ログアウト</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -255,7 +261,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4">{children}</main>
+        <main className="knowledge-canvas flex-1 p-0">{children}</main>
       </SidebarInset>
     </>
   );

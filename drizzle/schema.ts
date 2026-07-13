@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -25,4 +25,51 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+export const insights = mysqlTable("insights", {
+  id: int("id").autoincrement().primaryKey(),
+  authorId: int("authorId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("insights_author_idx").on(table.authorId),
+  index("insights_created_idx").on(table.createdAt),
+]);
+
+export const insightReactions = mysqlTable("insight_reactions", {
+  id: int("id").autoincrement().primaryKey(),
+  insightId: int("insightId").notNull().references(() => insights.id, { onDelete: "cascade" }),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  reaction: mysqlEnum("reaction", ["spark", "agree", "thanks", "idea"]).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("insight_reaction_unique").on(table.insightId, table.userId, table.reaction),
+  index("insight_reactions_insight_idx").on(table.insightId),
+  index("insight_reactions_user_idx").on(table.userId),
+]);
+
+export const improvementCases = mysqlTable("improvement_cases", {
+  id: int("id").autoincrement().primaryKey(),
+  authorId: int("authorId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  originalMethod: text("originalMethod").notNull(),
+  problem: text("problem").notNull(),
+  beforeMinutes: int("beforeMinutes").notNull(),
+  solution: text("solution").notNull(),
+  afterMinutes: int("afterMinutes").notNull(),
+  imageUrl: text("imageUrl"),
+  imagePrompt: text("imagePrompt"),
+  status: mysqlEnum("status", ["draft", "published"]).default("draft").notNull(),
+  generatedAt: timestamp("generatedAt"),
+  publishedAt: timestamp("publishedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("improvement_cases_author_idx").on(table.authorId),
+  index("improvement_cases_status_idx").on(table.status),
+  index("improvement_cases_published_idx").on(table.publishedAt),
+]);
+
+export type Insight = typeof insights.$inferSelect;
+export type InsertInsight = typeof insights.$inferInsert;
+export type ImprovementCase = typeof improvementCases.$inferSelect;
+export type InsertImprovementCase = typeof improvementCases.$inferInsert;

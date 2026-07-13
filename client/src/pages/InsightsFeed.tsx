@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { formatReversedDisplayName } from "@shared/displayName";
+import { formatDisplayName } from "@shared/displayName";
 import { INSIGHT_GENRES, type InsightGenre } from "@shared/insightGenres";
 import { Heart, Lightbulb, Loader2, MessageCircle, PenLine, Search, Send, Trash2, UserRound, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -81,10 +81,10 @@ function InsightComments({ insightId, commentCount, currentUserId }: InsightComm
             <div className="space-y-4">
               {comments.map(comment => (
                 <div key={comment.id} className="flex gap-3">
-                  <Avatar className="h-8 w-8 border border-white"><AvatarFallback className="bg-white text-xs font-semibold text-primary">{formatReversedDisplayName(comment.authorName, "メ").charAt(0)}</AvatarFallback></Avatar>
+                  <Avatar className="h-8 w-8 border border-white"><AvatarFallback className="bg-white text-xs font-semibold text-primary">{formatDisplayName(comment.authorName, "メ").charAt(0)}</AvatarFallback></Avatar>
                   <div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm bg-white/80 px-4 py-3 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
-                      <div><p className="text-xs font-semibold">{formatReversedDisplayName(comment.authorName, "メンバー")}</p><time className="mt-0.5 block text-[10px] text-muted-foreground">{new Date(comment.createdAt).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>
+                      <div><p className="text-xs font-semibold">{formatDisplayName(comment.authorName, "メンバー")}</p><time className="mt-0.5 block text-[10px] text-muted-foreground">{new Date(comment.createdAt).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>
                       {currentUserId === comment.authorId && <Button type="button" variant="ghost" size="icon-sm" aria-label="コメントを削除" onClick={() => deleteComment.mutate({ id: comment.id })} disabled={deleteComment.isPending} className="shrink-0 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>}
                     </div>
                     <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground/85">{comment.content}</p>
@@ -191,9 +191,9 @@ export default function InsightsFeed() {
           ) : data.map(item => (
             <article key={item.id} className="editorial-card rounded-[1.5rem] border border-white/80 p-5 sm:p-7">
               <div className="flex gap-4">
-                <Avatar className="h-10 w-10 border border-white shadow-sm"><AvatarFallback className="bg-accent font-semibold text-primary">{formatReversedDisplayName(item.authorName, "メ").charAt(0)}</AvatarFallback></Avatar>
+                <Avatar className="h-10 w-10 border border-white shadow-sm"><AvatarFallback className="bg-accent font-semibold text-primary">{formatDisplayName(item.authorName, "メ").charAt(0)}</AvatarFallback></Avatar>
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{formatReversedDisplayName(item.authorName, "メンバー")}</p><span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-primary">{item.genre}</span></div><time className="text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>
+                  <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{formatDisplayName(item.authorName, "メンバー")}</p><span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-primary">{item.genre}</span></div><time className="text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>
                   <p className="mt-4 whitespace-pre-wrap text-[15px] leading-8 text-foreground/90">{item.content}</p>
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
                     <Button type="button" variant="outline" size="sm" aria-pressed={item.likedByMe} onClick={() => toggleLike.mutate({ insightId: item.id })} disabled={toggleLike.isPending} className={`h-9 rounded-full px-3 ${item.likedByMe ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700" : "border-border/70 bg-white/50 text-muted-foreground hover:bg-white"}`}><Heart className={`mr-2 h-4 w-4 ${item.likedByMe ? "fill-current" : ""}`} />いいね {item.likeCount}</Button>

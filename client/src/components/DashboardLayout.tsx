@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { formatReversedDisplayName } from "@shared/displayName";
+import { formatDisplayName } from "@shared/displayName";
 import { BookOpen, Home, Lightbulb, LogOut, PanelLeft, PenLine, PlusCircle } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -121,7 +121,7 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
-  const displayUserName = formatReversedDisplayName(user?.name);
+  const displayUserName = formatDisplayName(user?.name);
 
   useEffect(() => {
     if (isCollapsed) {

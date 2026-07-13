@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildImprovementImagePrompt, improvementInputSchema } from "./routers/improvements";
+import { buildImprovementImagePrompt, canDeleteImprovementCase, improvementInputSchema } from "./routers/improvements";
 
 const caseInput = {
   title: "申請承認時間を75％短縮",
@@ -28,6 +28,15 @@ describe("improvement case input", () => {
     const result = improvementInputSchema.safeParse({ ...caseInput, title: "  " });
     expect(result.success).toBe(false);
   });
+
+  it("accepts an optional http or https work URL", () => {
+    expect(improvementInputSchema.parse({ ...caseInput, workUrl: "https://example.com/demo" }).workUrl).toBe("https://example.com/demo");
+    expect(improvementInputSchema.parse({ ...caseInput, workUrl: "" }).workUrl).toBeUndefined();
+  });
+
+  it("rejects unsafe work URL protocols", () => {
+    expect(improvementInputSchema.safeParse({ ...caseInput, workUrl: "javascript:alert(1)" }).success).toBe(false);
+  });
 });
 
 describe("buildImprovementImagePrompt", () => {
@@ -42,5 +51,18 @@ describe("buildImprovementImagePrompt", () => {
     expect(prompt).toContain("改善後: 15分");
     expect(prompt).toContain("45分削減 / 75%短縮");
     expect(prompt).toContain("do not invent statistics or claims");
+  });
+
+  it("does not include the optional work URL in the generated material", () => {
+    const prompt = buildImprovementImagePrompt({ ...caseInput, workUrl: "https://example.com/demo" });
+    expect(prompt).not.toContain("example.com");
+  });
+});
+
+describe("improvement case deletion authorization", () => {
+  it("allows only the author to delete a case", () => {
+    expect(canDeleteImprovementCase({ authorId: 12 }, 12)).toBe(true);
+    expect(canDeleteImprovementCase({ authorId: 12 }, 99)).toBe(false);
+    expect(canDeleteImprovementCase(null, 12)).toBe(false);
   });
 });

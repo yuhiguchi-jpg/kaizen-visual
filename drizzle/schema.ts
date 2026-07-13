@@ -28,11 +28,13 @@ export type InsertUser = typeof users.$inferInsert;
 export const insights = mysqlTable("insights", {
   id: int("id").autoincrement().primaryKey(),
   authorId: int("authorId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  genre: varchar("genre", { length: 64 }).default("業務プロセス改善").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [
   index("insights_author_idx").on(table.authorId),
+  index("insights_genre_idx").on(table.genre),
   index("insights_created_idx").on(table.createdAt),
 ]);
 
@@ -52,6 +54,7 @@ export const improvementCases = mysqlTable("improvement_cases", {
   id: int("id").autoincrement().primaryKey(),
   authorId: int("authorId").notNull().references(() => users.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 160 }).default("改善事例").notNull(),
+  workUrl: text("workUrl"),
   originalMethod: text("originalMethod").notNull(),
   problem: text("problem").notNull(),
   beforeMinutes: int("beforeMinutes").notNull(),

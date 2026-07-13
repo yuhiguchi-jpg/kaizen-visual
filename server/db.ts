@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, like, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   improvementCases,
@@ -104,13 +104,25 @@ export async function createInsight(input: InsertInsight) {
   return Number(result[0].insertId);
 }
 
-export async function listInsights(viewerId: number) {
+export type InsightFilters = {
+  genre?: string;
+  keyword?: string;
+  author?: string;
+};
+
+export async function listInsights(viewerId: number, filters: InsightFilters = {}) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
+
+  const conditions: SQL[] = [];
+  if (filters.genre) conditions.push(eq(insights.genre, filters.genre));
+  if (filters.keyword) conditions.push(like(insights.content, `%${filters.keyword}%`));
+  if (filters.author) conditions.push(like(users.name, `%${filters.author}%`));
 
   const insightRows = await db
     .select({
       id: insights.id,
+      genre: insights.genre,
       content: insights.content,
       createdAt: insights.createdAt,
       authorId: insights.authorId,
@@ -118,6 +130,7 @@ export async function listInsights(viewerId: number) {
     })
     .from(insights)
     .leftJoin(users, eq(insights.authorId, users.id))
+    .where(and(...conditions))
     .orderBy(desc(insights.createdAt));
 
   const reactionRows = await db
@@ -188,7 +201,7 @@ export async function createImprovementCase(input: InsertImprovementCase) {
 export async function updateImprovementDraft(
   id: number,
   authorId: number,
-  input: Pick<InsertImprovementCase, "title" | "originalMethod" | "problem" | "beforeMinutes" | "solution" | "afterMinutes" | "imagePrompt">,
+  input: Pick<InsertImprovementCase, "title" | "workUrl" | "originalMethod" | "problem" | "beforeMinutes" | "solution" | "afterMinutes" | "imagePrompt">,
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
@@ -221,13 +234,24 @@ export async function publishImprovementCase(id: number, authorId: number) {
   ));
 }
 
+export async function deleteImprovementCase(id: number, authorId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.delete(improvementCases).where(and(
+    eq(improvementCases.id, id),
+    eq(improvementCases.authorId, authorId),
+  ));
+}
+
 export async function listPublishedImprovementCases() {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
   return db
     .select({
       id: improvementCases.id,
+      authorId: improvementCases.authorId,
       title: improvementCases.title,
+      workUrl: improvementCases.workUrl,
       originalMethod: improvementCases.originalMethod,
       problem: improvementCases.problem,
       beforeMinutes: improvementCases.beforeMinutes,

@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   createImprovementCase,
+  deleteImprovementCase,
   getImprovementCase,
   listPublishedImprovementCases,
   publishImprovementCase,
@@ -13,6 +14,13 @@ import { protectedProcedure, router } from "../_core/trpc";
 
 export const improvementInputSchema = z.object({
   title: z.string().trim().min(1).max(160),
+  workUrl: z.preprocess(
+    value => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().trim().url("http:// または https:// で始まるURLを入力してください").max(2048).refine(
+      value => ["http:", "https:"].includes(new URL(value).protocol),
+      "http:// または https:// で始まるURLを入力してください",
+    ).optional(),
+  ),
   originalMethod: z.string().trim().min(1).max(2000),
   problem: z.string().trim().min(1).max(2000),
   beforeMinutes: z.number().int().min(1).max(100000),
@@ -20,7 +28,12 @@ export const improvementInputSchema = z.object({
   afterMinutes: z.number().int().min(0).max(100000),
 });
 
-export function buildImprovementImagePrompt(input: z.infer<typeof improvementInputSchema>) {
+type ImprovementPromptInput = Pick<
+  z.infer<typeof improvementInputSchema>,
+  "title" | "originalMethod" | "problem" | "beforeMinutes" | "solution" | "afterMinutes"
+>;
+
+export function buildImprovementImagePrompt(input: ImprovementPromptInput) {
   const savedMinutes = Math.max(0, input.beforeMinutes - input.afterMinutes);
   const reductionRate = Math.max(0, Math.round((savedMinutes / input.beforeMinutes) * 100));
   return `Create a refined Japanese editorial infographic card that summarizes one workplace improvement case for an internal knowledge-sharing application.
@@ -40,6 +53,10 @@ Composition: landscape 4:3 single-page card, strong left-to-right BEFORE to AFTE
 Style: premium Japanese business editorial design, near-white pale blue paper background, refined royal blue and navy geometric forms, restrained sky blue accents, charcoal typography, subtle paper grain, elegant and calm, consistent reusable brand system.
 Title requirements: display the supplied main title prominently at the top as the only document title. Do not add a generic business-improvement heading, English document-category label, or any other fixed heading before or after it.
 Constraints: render all supplied facts faithfully, do not invent statistics or claims, no logos, no watermark, no decorative text beyond the specified labels.`;
+}
+
+export function canDeleteImprovementCase(item: { authorId: number } | null | undefined, userId: number) {
+  return Boolean(item && item.authorId === userId);
 }
 
 export const improvementsRouter = router({
@@ -108,6 +125,14 @@ export const improvementsRouter = router({
       if (!item || item.authorId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
       if (!item.imageUrl) throw new TRPCError({ code: "BAD_REQUEST", message: "先に画像を生成してください。" });
       await publishImprovementCase(item.id, ctx.user.id);
+      return { success: true as const };
+    }),
+  delete: protectedProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const item = await getImprovementCase(input.id);
+      if (!canDeleteImprovementCase(item, ctx.user.id)) throw new TRPCError({ code: "NOT_FOUND" });
+      await deleteImprovementCase(item.id, ctx.user.id);
       return { success: true as const };
     }),
 });

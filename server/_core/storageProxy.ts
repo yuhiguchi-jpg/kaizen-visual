@@ -1,6 +1,28 @@
 import type { Express } from "express";
 import { ENV } from "./env";
 
+const CONTENT_TYPES_BY_EXTENSION: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+  gif: "image/gif",
+  avif: "image/avif",
+  pdf: "application/pdf",
+};
+
+export function resolveStorageContentType(
+  key: string,
+  upstreamContentType: string | null,
+) {
+  if (upstreamContentType && upstreamContentType !== "application/octet-stream") {
+    return upstreamContentType;
+  }
+
+  const extension = key.split(".").pop()?.toLowerCase() ?? "";
+  return CONTENT_TYPES_BY_EXTENSION[extension] ?? "application/octet-stream";
+}
+
 export function registerStorageProxy(app: Express) {
   app.get("/manus-storage/*", async (req, res) => {
     const key = (req.params as Record<string, string>)[0];
@@ -38,8 +60,25 @@ export function registerStorageProxy(app: Express) {
         return;
       }
 
-      res.set("Cache-Control", "no-store");
-      res.redirect(307, url);
+      const objectResp = await fetch(url);
+      if (!objectResp.ok) {
+        console.error(`[StorageProxy] object error: ${objectResp.status}`);
+        res.status(502).send("Storage object error");
+        return;
+      }
+
+      const contentType = resolveStorageContentType(
+        key,
+        objectResp.headers.get("content-type"),
+      );
+      const contentLength = objectResp.headers.get("content-length");
+      const bytes = Buffer.from(await objectResp.arrayBuffer());
+
+      res.set("Content-Type", contentType);
+      res.set("Cache-Control", "private, max-age=3600");
+      res.set("X-Content-Type-Options", "nosniff");
+      if (contentLength) res.set("Content-Length", contentLength);
+      res.status(200).send(bytes);
     } catch (err) {
       console.error("[StorageProxy] failed:", err);
       res.status(502).send("Storage proxy error");

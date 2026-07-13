@@ -51,6 +51,7 @@ export const insightReactions = mysqlTable("insight_reactions", {
 export const improvementCases = mysqlTable("improvement_cases", {
   id: int("id").autoincrement().primaryKey(),
   authorId: int("authorId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 160 }).default("改善事例").notNull(),
   originalMethod: text("originalMethod").notNull(),
   problem: text("problem").notNull(),
   beforeMinutes: int("beforeMinutes").notNull(),

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildImprovementImagePrompt, improvementInputSchema } from "./routers/improvements";
 
 const caseInput = {
+  title: "申請承認時間を75％短縮",
   originalMethod: "紙の申請書を各部署へ手渡ししていた",
   problem: "承認状況が分からず、確認に時間がかかっていた",
   beforeMinutes: 60,
@@ -22,11 +23,18 @@ describe("improvement case input", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("rejects an empty title", () => {
+    const result = improvementInputSchema.safeParse({ ...caseInput, title: "  " });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("buildImprovementImagePrompt", () => {
   it("keeps the fixed editorial art direction and exact case facts", () => {
     const prompt = buildImprovementImagePrompt(caseInput);
+    expect(prompt).toContain("Main title: 申請承認時間を75％短縮");
+    expect(prompt).not.toContain("業務改善 CASE STUDY");
     expect(prompt).toContain("near-white pale blue paper background");
     expect(prompt).toContain("royal blue and navy geometric forms");
     expect(prompt).toContain("紙の申請書を各部署へ手渡ししていた");

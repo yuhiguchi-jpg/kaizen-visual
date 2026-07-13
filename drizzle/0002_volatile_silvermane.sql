@@ -1,0 +1,1 @@
+ALTER TABLE `improvement_cases` ADD `title` varchar(160) DEFAULT '改善事例' NOT NULL;

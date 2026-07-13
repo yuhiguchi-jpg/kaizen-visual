@@ -188,7 +188,7 @@ export async function createImprovementCase(input: InsertImprovementCase) {
 export async function updateImprovementDraft(
   id: number,
   authorId: number,
-  input: Pick<InsertImprovementCase, "originalMethod" | "problem" | "beforeMinutes" | "solution" | "afterMinutes" | "imagePrompt">,
+  input: Pick<InsertImprovementCase, "title" | "originalMethod" | "problem" | "beforeMinutes" | "solution" | "afterMinutes" | "imagePrompt">,
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
@@ -227,6 +227,7 @@ export async function listPublishedImprovementCases() {
   return db
     .select({
       id: improvementCases.id,
+      title: improvementCases.title,
       originalMethod: improvementCases.originalMethod,
       problem: improvementCases.problem,
       beforeMinutes: improvementCases.beforeMinutes,

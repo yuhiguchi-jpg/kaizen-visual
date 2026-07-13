@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import ImprovementCaseCard from "@/components/ImprovementCaseCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,7 +11,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,9 +27,7 @@ import {
   IMPROVEMENT_IMAGE_ZOOM,
 } from "../../../shared/improvementLibrary";
 import {
-  ArrowRight,
   BookOpen,
-  Clock3,
   ExternalLink,
   Maximize2,
   Minus,
@@ -38,7 +36,6 @@ import {
   RotateCcw,
   Search,
   Trash2,
-  TrendingDown,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -154,33 +151,33 @@ export default function ImprovementsLibrary() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {data.map(item => {
-                const saved = Math.max(0, item.beforeMinutes - item.afterMinutes);
-                const rate = Math.max(0, Math.round(saved / item.beforeMinutes * 100));
                 const canDelete = user?.id === item.authorId;
+                const authorName = formatDisplayName(item.authorName, "メンバー");
                 return (
-                  <article key={item.id} data-improvement-card className="editorial-card group flex h-[38rem] flex-col overflow-hidden rounded-[1.5rem] border border-white/80 hover:-translate-y-1 hover:shadow-[0_30px_70px_-40px_rgba(29,78,216,.4)]">
-                    <div data-improvement-card-image className="relative h-[17rem] shrink-0 overflow-hidden bg-accent/50">
-                      {item.imageUrl ? (
+                  <ImprovementCaseCard
+                    key={item.id}
+                    title={item.title}
+                    problem={item.problem}
+                    beforeMinutes={item.beforeMinutes}
+                    afterMinutes={item.afterMinutes}
+                    authorName={authorName}
+                    authorInitial={authorName.charAt(0)}
+                    dateLabel={item.publishedAt ? new Date(item.publishedAt).toLocaleDateString("ja-JP", { month: "short", day: "numeric" }) : ""}
+                    imageArea={
+                      item.imageUrl ? (
                         <button type="button" onClick={() => { setViewerImage({ src: item.imageUrl!, title: item.title }); setZoom(1); }} aria-label={`「${item.title}」の画像を全画面表示`} className="h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-primary">
                           <img src={item.imageUrl} alt={`${item.title}の改善事例`} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
                           <span className="absolute right-3 top-3 inline-flex items-center rounded-full bg-slate-950/70 px-2.5 py-1.5 text-[11px] font-semibold text-white opacity-0 backdrop-blur transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"><Maximize2 className="mr-1.5 h-3.5 w-3.5" />全画面</span>
                         </button>
-                      ) : null}
-                      <div className="pointer-events-none absolute bottom-3 left-3 flex gap-2"><span className="inline-flex items-center rounded-full bg-primary/90 px-3 py-1.5 text-xs font-semibold text-primary-foreground backdrop-blur"><TrendingDown className="mr-1.5 h-3.5 w-3.5" />{rate}%短縮</span><span className="inline-flex items-center rounded-full bg-accent/95 px-3 py-1.5 text-xs font-semibold text-primary"><Clock3 className="mr-1.5 h-3.5 w-3.5" />{saved}分削減</span></div>
-                    </div>
-                    <div data-improvement-card-body className="flex h-[21rem] flex-col p-5">
-                      <h2 className="line-clamp-2 h-12 shrink-0 overflow-hidden text-base font-semibold leading-6">{item.title}</h2>
-                      <p className="mt-2 line-clamp-2 h-10 shrink-0 overflow-hidden text-xs leading-5 text-muted-foreground">{item.problem}</p>
-                      <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl bg-accent/50 p-3 text-center"><div><p className="text-[10px] font-bold tracking-wider text-muted-foreground">BEFORE</p><p className="mt-1 text-base font-semibold">{item.beforeMinutes}分</p></div><ArrowRight className="h-4 w-4 text-primary/50" /><div><p className="text-[10px] font-bold tracking-wider text-primary">AFTER</p><p className="mt-1 text-base font-semibold text-primary">{item.afterMinutes}分</p></div></div>
-
-                      <div data-improvement-card-actions className="mt-4 flex h-14 shrink-0 flex-nowrap items-start gap-2 overflow-hidden border-t border-border/60 pt-4">
+                      ) : null
+                    }
+                    actions={
+                      <>
                         {item.workUrl && <Button asChild variant="outline" size="sm" className="rounded-lg bg-white/60"><a href={item.workUrl} target="_blank" rel="noopener noreferrer">制作物を開く<ExternalLink className="ml-2 h-3.5 w-3.5" /></a></Button>}
                         {canDelete && <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="mr-2 h-3.5 w-3.5" />削除</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>この改善事例を削除しますか？</AlertDialogTitle><AlertDialogDescription>「{item.title}」をライブラリから削除します。この操作は取り消せません。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>キャンセル</AlertDialogCancel><AlertDialogAction onClick={() => removeCase.mutate({ id: item.id })} disabled={removeCase.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">削除する</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
-                      </div>
-
-                      <div data-improvement-card-author className="mt-auto flex shrink-0 items-center justify-between"><div className="flex items-center gap-2"><Avatar className="h-7 w-7"><AvatarFallback className="bg-accent text-[10px] text-primary">{formatDisplayName(item.authorName, "メ").charAt(0)}</AvatarFallback></Avatar><span className="text-xs text-muted-foreground">{formatDisplayName(item.authorName, "メンバー")}</span></div><time className="text-[11px] text-muted-foreground">{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString("ja-JP", { month: "short", day: "numeric" }) : ""}</time></div>
-                    </div>
-                  </article>
+                      </>
+                    }
+                  />
                 );
               })}
             </div>

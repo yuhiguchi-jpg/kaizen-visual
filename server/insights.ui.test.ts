@@ -5,6 +5,10 @@ const source = readFileSync(
   new URL("../client/src/pages/InsightsFeed.tsx", import.meta.url),
   "utf8",
 );
+const engagementSource = readFileSync(
+  new URL("../client/src/components/InsightEngagementBar.tsx", import.meta.url),
+  "utf8",
+);
 
 describe("みんなの気づきのいいね・コメント接続", () => {
   it("新しいいいね・コメントAPIを利用する", () => {
@@ -36,8 +40,8 @@ describe("みんなの気づきのいいね・コメント接続", () => {
     expect(source).toContain("<Heart");
     expect(source).toContain("<MessageCircle");
     expect(source).toContain("コメントを書く");
-    expect(source).toContain("data-insight-actions");
-    expect(source).toContain('data-insight-engagement className="inline-flex shrink-0 flex-nowrap items-center gap-2"');
+    expect(engagementSource).toContain("data-insight-actions");
+    expect(engagementSource).toContain('data-insight-engagement className="inline-flex shrink-0 flex-nowrap items-center gap-2"');
     expect(source).toContain("aria-expanded={isOpen}");
     expect(source).toContain("data-insight-comments-panel");
     expect(source).toContain("{isOpen && (");

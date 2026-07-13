@@ -36,7 +36,7 @@ AFTER section label: AFTER
 成果 callout: ${savedMinutes}分削減 / ${reductionRate}%短縮
 
 Composition: landscape 4:3 single-page card, strong left-to-right BEFORE to AFTER flow, generous whitespace, clear information hierarchy, readable Japanese text, small abstract workflow icons, no people and no device mockup.
-Style: premium Japanese business editorial design, warm ivory paper background, deep teal geometric forms, restrained muted gold accents, charcoal typography, subtle paper grain, elegant and calm, consistent reusable brand system.
+Style: premium Japanese business editorial design, near-white pale blue paper background, refined royal blue and navy geometric forms, restrained sky blue accents, charcoal typography, subtle paper grain, elegant and calm, consistent reusable brand system.
 Constraints: render all supplied facts faithfully, do not invent statistics or claims, no logos, no watermark, no decorative text beyond the specified labels.`;
 }
 

@@ -27,8 +27,8 @@ describe("improvement case input", () => {
 describe("buildImprovementImagePrompt", () => {
   it("keeps the fixed editorial art direction and exact case facts", () => {
     const prompt = buildImprovementImagePrompt(caseInput);
-    expect(prompt).toContain("warm ivory paper background");
-    expect(prompt).toContain("deep teal geometric forms");
+    expect(prompt).toContain("near-white pale blue paper background");
+    expect(prompt).toContain("royal blue and navy geometric forms");
     expect(prompt).toContain("紙の申請書を各部署へ手渡ししていた");
     expect(prompt).toContain("改善前: 60分");
     expect(prompt).toContain("改善後: 15分");

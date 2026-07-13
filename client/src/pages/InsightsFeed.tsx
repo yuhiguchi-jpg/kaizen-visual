@@ -64,24 +64,27 @@ function InsightComments({ insightId, commentCount, currentUserId, likeAction, d
 
   return (
     <div className="mt-5">
-      <div data-insight-actions className="flex items-center gap-2 border-t border-border/60 pt-4">
-        {likeAction}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsOpen(current => !current)}
-          aria-expanded={isOpen}
-          className="h-9 rounded-full px-3 text-muted-foreground hover:bg-accent hover:text-primary"
-        >
-          <MessageCircle className="mr-2 h-4 w-4" />
-          コメント {commentCount}
-        </Button>
+      <div data-insight-actions className="flex flex-wrap items-start justify-between gap-2 border-t border-border/60 pt-4">
+        <div data-insight-engagement className="inline-flex shrink-0 flex-nowrap items-center gap-2">
+          {likeAction}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsOpen(current => !current)}
+            aria-expanded={isOpen}
+            aria-controls={`insight-comments-${insightId}`}
+            className="h-9 shrink-0 rounded-full px-3 text-muted-foreground hover:bg-accent hover:text-primary"
+          >
+            <MessageCircle className="mr-2 h-4 w-4" />
+            コメント {commentCount}
+          </Button>
+        </div>
         {deleteAction && <div className="ml-auto">{deleteAction}</div>}
       </div>
 
       {isOpen && (
-        <div className="mt-4 rounded-2xl bg-muted/45 p-4 sm:p-5">
+        <div id={`insight-comments-${insightId}`} data-insight-comments-panel className="mt-4 rounded-2xl bg-muted/45 p-4 sm:p-5">
           {isLoading ? (
             <div className="space-y-3"><Skeleton className="h-14 w-full rounded-xl" /><Skeleton className="h-14 w-4/5 rounded-xl" /></div>
           ) : comments?.length ? (
@@ -206,7 +209,7 @@ export default function InsightsFeed() {
                     insightId={item.id}
                     commentCount={item.commentCount}
                     currentUserId={user?.id}
-                    likeAction={<Button type="button" variant="outline" size="sm" aria-pressed={item.likedByMe} onClick={() => toggleLike.mutate({ insightId: item.id })} disabled={toggleLike.isPending} className={`h-9 rounded-full px-3 ${item.likedByMe ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700" : "border-border/70 bg-white/50 text-muted-foreground hover:bg-white"}`}><Heart className={`mr-2 h-4 w-4 ${item.likedByMe ? "fill-current" : ""}`} />いいね {item.likeCount}</Button>}
+                    likeAction={<Button type="button" variant="outline" size="sm" aria-pressed={item.likedByMe} onClick={() => toggleLike.mutate({ insightId: item.id })} disabled={toggleLike.isPending} className={`h-9 shrink-0 rounded-full px-3 ${item.likedByMe ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700" : "border-border/70 bg-white/50 text-muted-foreground hover:bg-white"}`}><Heart className={`mr-2 h-4 w-4 ${item.likedByMe ? "fill-current" : ""}`} />いいね {item.likeCount}</Button>}
                     deleteAction={user?.id === item.authorId ? <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="mr-2 h-3.5 w-3.5" />削除</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>この気づきを削除しますか？</AlertDialogTitle><AlertDialogDescription>投稿した気づきと、その気づきに付いたいいね・コメントを削除します。この操作は取り消せません。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>キャンセル</AlertDialogCancel><AlertDialogAction onClick={() => removeInsight.mutate({ id: item.id })} disabled={removeInsight.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">削除する</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog> : undefined}
                   />
                 </div>

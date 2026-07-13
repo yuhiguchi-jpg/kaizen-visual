@@ -37,7 +37,9 @@ describe("みんなの気づきのいいね・コメント接続", () => {
     expect(source).toContain("<MessageCircle");
     expect(source).toContain("コメントを書く");
     expect(source).toContain("data-insight-actions");
+    expect(source).toContain('data-insight-engagement className="inline-flex shrink-0 flex-nowrap items-center gap-2"');
     expect(source).toContain("aria-expanded={isOpen}");
+    expect(source).toContain("data-insight-comments-panel");
     expect(source).toContain("{isOpen && (");
   });
 });

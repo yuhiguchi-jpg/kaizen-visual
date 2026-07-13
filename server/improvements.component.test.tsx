@@ -85,17 +85,22 @@ describe("改善事例カードの統一レイアウト", () => {
     expect(screen.getByRole("link", { name: "制作物を開く" })).toBeTruthy();
 
     const cards = Array.from(container.querySelectorAll("[data-improvement-card]"));
+    const images = Array.from(container.querySelectorAll("[data-improvement-card-image]"));
     const bodies = Array.from(container.querySelectorAll("[data-improvement-card-body]"));
     const actionAreas = Array.from(container.querySelectorAll("[data-improvement-card-actions]"));
     const authorAreas = Array.from(container.querySelectorAll("[data-improvement-card-author]"));
 
     expect(cards).toHaveLength(2);
+    expect(images).toHaveLength(2);
     expect(bodies).toHaveLength(2);
     expect(actionAreas).toHaveLength(2);
     expect(authorAreas).toHaveLength(2);
-    expect(cards.every(card => card.classList.contains("h-full"))).toBe(true);
+    expect(cards.every(card => card.classList.contains("h-[38rem]"))).toBe(true);
+    expect(images.every(image => image.classList.contains("h-[17rem]"))).toBe(true);
     expect(bodies.every(body => body.classList.contains("h-[21rem]"))).toBe(true);
-    expect(actionAreas.every(area => area.classList.contains("min-h-14"))).toBe(true);
+    expect(actionAreas.every(area => area.classList.contains("h-14"))).toBe(true);
+    expect(actionAreas.every(area => area.classList.contains("shrink-0"))).toBe(true);
     expect(authorAreas.every(area => area.classList.contains("mt-auto"))).toBe(true);
+    expect(authorAreas.every(area => area.classList.contains("shrink-0"))).toBe(true);
   });
 });

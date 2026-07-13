@@ -10,6 +10,7 @@ import InsightsFeed from "./pages/InsightsFeed";
 import DashboardLayout from "./components/DashboardLayout";
 import ImprovementCreate from "./pages/ImprovementCreate";
 import ImprovementsLibrary from "./pages/ImprovementsLibrary";
+import CardUiReview from "./pages/CardUiReview";
 
 function Router() {
   return (
@@ -41,7 +42,7 @@ function App() {
       >
         <TooltipProvider>
           <Toaster />
-          <Router />
+          {import.meta.env.DEV && window.location.pathname === "/__ui-review" ? <CardUiReview /> : <Router />}
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

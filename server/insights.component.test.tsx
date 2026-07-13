@@ -108,9 +108,15 @@ describe("みんなの気づきのいいね・コメントUI", () => {
     expect(screen.getByRole("button", { name: "いいね 3" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "コメント 1" })).toBeTruthy();
     const actionRow = container.querySelector("[data-insight-actions]");
+    const engagementGroup = container.querySelector("[data-insight-engagement]");
     expect(actionRow).toBeTruthy();
-    expect(actionRow?.contains(screen.getByRole("button", { name: "いいね 3" }))).toBe(true);
-    expect(actionRow?.contains(screen.getByRole("button", { name: "コメント 1" }))).toBe(true);
+    expect(engagementGroup).toBeTruthy();
+    expect(engagementGroup?.contains(screen.getByRole("button", { name: "いいね 3" }))).toBe(true);
+    expect(engagementGroup?.contains(screen.getByRole("button", { name: "コメント 1" }))).toBe(true);
+    expect(engagementGroup?.classList.contains("inline-flex")).toBe(true);
+    expect(engagementGroup?.classList.contains("flex-nowrap")).toBe(true);
+    expect(screen.getByRole("button", { name: "いいね 3" }).classList.contains("shrink-0")).toBe(true);
+    expect(screen.getByRole("button", { name: "コメント 1" }).classList.contains("shrink-0")).toBe(true);
     expect(screen.queryByRole("textbox", { name: "コメント本文" })).toBeNull();
     expect(screen.queryByText(comment.content)).toBeNull();
     expect(container.querySelector(".sm\\:px-8.lg\\:px-12")).toBeTruthy();

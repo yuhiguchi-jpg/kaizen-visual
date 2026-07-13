@@ -158,8 +158,11 @@ export default function ImprovementsLibrary() {
                     key={item.id}
                     title={item.title}
                     problem={item.problem}
-                    beforeMinutes={item.beforeMinutes}
-                    afterMinutes={item.afterMinutes}
+                    beforeSeconds={item.beforeSeconds}
+                    afterSeconds={item.afterSeconds}
+                    frequencyCount={item.frequencyCount}
+                    frequencyPeriod={item.frequencyPeriod}
+                    annualSavedSeconds={item.annualSavedSeconds}
                     authorName={authorName}
                     authorInitial={authorName.charAt(0)}
                     dateLabel={item.publishedAt ? new Date(item.publishedAt).toLocaleDateString("ja-JP", { month: "short", day: "numeric" }) : ""}

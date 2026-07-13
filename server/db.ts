@@ -13,6 +13,7 @@ import {
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import { normalizeStoragePublicUrl } from './storage';
+import { calculateAnnualSavedSeconds } from '@shared/improvementTime';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -263,7 +264,7 @@ export async function createImprovementCase(input: InsertImprovementCase) {
 export async function updateImprovementDraft(
   id: number,
   authorId: number,
-  input: Pick<InsertImprovementCase, "title" | "workUrl" | "originalMethod" | "problem" | "beforeMinutes" | "solution" | "afterMinutes" | "imagePrompt">,
+  input: Pick<InsertImprovementCase, "title" | "workUrl" | "originalMethod" | "problem" | "beforeMinutes" | "beforeSeconds" | "solution" | "afterMinutes" | "afterSeconds" | "frequencyCount" | "frequencyPeriod" | "imagePrompt">,
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
@@ -329,8 +330,12 @@ export async function listPublishedImprovementCases(query?: string) {
       originalMethod: improvementCases.originalMethod,
       problem: improvementCases.problem,
       beforeMinutes: improvementCases.beforeMinutes,
+      beforeSeconds: improvementCases.beforeSeconds,
       solution: improvementCases.solution,
       afterMinutes: improvementCases.afterMinutes,
+      afterSeconds: improvementCases.afterSeconds,
+      frequencyCount: improvementCases.frequencyCount,
+      frequencyPeriod: improvementCases.frequencyPeriod,
       imageUrl: improvementCases.imageUrl,
       publishedAt: improvementCases.publishedAt,
       authorName: users.name,
@@ -343,6 +348,12 @@ export async function listPublishedImprovementCases(query?: string) {
   return rows.map(row => ({
     ...row,
     imageUrl: normalizeStoragePublicUrl(row.imageUrl),
+    annualSavedSeconds: calculateAnnualSavedSeconds({
+      beforeSeconds: row.beforeSeconds,
+      afterSeconds: row.afterSeconds,
+      frequencyCount: row.frequencyCount,
+      frequencyPeriod: row.frequencyPeriod,
+    }),
   }));
 }
 
@@ -351,13 +362,15 @@ export async function getKnowledgeStats() {
   if (!db) throw new Error("Database is not available");
   const insightRows = await db.select({ id: insights.id }).from(insights);
   const improvementRows = await db.select({
-    beforeMinutes: improvementCases.beforeMinutes,
-    afterMinutes: improvementCases.afterMinutes,
+    beforeSeconds: improvementCases.beforeSeconds,
+    afterSeconds: improvementCases.afterSeconds,
+    frequencyCount: improvementCases.frequencyCount,
+    frequencyPeriod: improvementCases.frequencyPeriod,
   }).from(improvementCases).where(eq(improvementCases.status, "published"));
 
   return {
     insightCount: insightRows.length,
     improvementCount: improvementRows.length,
-    savedMinutes: improvementRows.reduce((total, item) => total + Math.max(0, item.beforeMinutes - item.afterMinutes), 0),
+    annualSavedSeconds: improvementRows.reduce((total, item) => total + calculateAnnualSavedSeconds(item), 0),
   };
 }

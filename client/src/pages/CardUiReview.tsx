@@ -48,8 +48,11 @@ export default function CardUiReview() {
                 key={item.id}
                 title={item.title}
                 problem={item.problem}
-                beforeMinutes={60}
-                afterMinutes={20}
+                beforeSeconds={3600}
+                afterSeconds={1200}
+                frequencyCount={5}
+                frequencyPeriod="week"
+                annualSavedSeconds={624000}
                 authorName={item.author}
                 authorInitial="投"
                 dateLabel="7月13日"

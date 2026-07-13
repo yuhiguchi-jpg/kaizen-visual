@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { clampImprovementImageZoom } from "../shared/improvementLibrary";
+import { calculateAnnualSavedSeconds, formatDuration } from "../shared/improvementTime";
 import { deleteImprovementCase } from "./db";
 import {
   buildImprovementImagePrompt,
@@ -12,9 +13,11 @@ const caseInput = {
   title: "申請承認時間を75％短縮",
   originalMethod: "紙の申請書を各部署へ手渡ししていた",
   problem: "承認状況が分からず、確認に時間がかかっていた",
-  beforeMinutes: 60,
+  beforeSeconds: 3600,
   solution: "共有フォームと自動通知に置き換えた",
-  afterMinutes: 15,
+  afterSeconds: 900,
+  frequencyCount: 5,
+  frequencyPeriod: "week" as const,
 };
 
 describe("improvement case input", () => {
@@ -22,11 +25,11 @@ describe("improvement case input", () => {
     expect(improvementInputSchema.parse(caseInput)).toEqual(caseInput);
   });
 
-  it("rejects zero-minute before time and empty descriptions", () => {
+  it("rejects zero-second before time and empty descriptions", () => {
     const result = improvementInputSchema.safeParse({
       ...caseInput,
       originalMethod: "",
-      beforeMinutes: 0,
+      beforeSeconds: 0,
     });
     expect(result.success).toBe(false);
   });
@@ -54,9 +57,10 @@ describe("buildImprovementImagePrompt", () => {
     expect(prompt).toContain("near-white pale blue paper background");
     expect(prompt).toContain("royal blue and navy geometric forms");
     expect(prompt).toContain("紙の申請書を各部署へ手渡ししていた");
-    expect(prompt).toContain("改善前: 60分");
+    expect(prompt).toContain("改善前: 1時間");
     expect(prompt).toContain("改善後: 15分");
-    expect(prompt).toContain("45分削減 / 75%短縮");
+    expect(prompt).toContain("発生頻度: 1週間に5回");
+    expect(prompt).toContain("年間195時間削減 / 75%短縮");
     expect(prompt).toContain("do not invent statistics or claims");
   });
 
@@ -75,6 +79,17 @@ describe("improvement case deletion authorization", () => {
     expect(canDeleteImprovementCase({ authorId: 12 }, 12)).toBe(true);
     expect(canDeleteImprovementCase({ authorId: 12 }, 99)).toBe(false);
     expect(canDeleteImprovementCase(null, 12)).toBe(false);
+  });
+});
+
+describe("annual saved time calculation", () => {
+  it("calculates annual savings from per-occurrence seconds and weekly frequency", () => {
+    expect(calculateAnnualSavedSeconds(caseInput)).toBe(702000);
+    expect(formatDuration(702000)).toBe("195時間");
+  });
+
+  it("never returns negative savings when after time exceeds before time", () => {
+    expect(calculateAnnualSavedSeconds({ ...caseInput, afterSeconds: 4000 })).toBe(0);
   });
 });
 

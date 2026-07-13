@@ -36,6 +36,13 @@
       "when": 1783921083405,
       "tag": "0004_overrated_thundra",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1783986309898,
+      "tag": "0005_icy_maginty",
+      "breakpoints": true
     }
   ]
 }

@@ -24,9 +24,11 @@ const caseInput = {
   title: "申請承認時間を75％短縮",
   originalMethod: "紙の申請書を各部署へ手渡ししていた",
   problem: "承認状況が分からず、確認に時間がかかっていた",
-  beforeMinutes: 60,
+  beforeSeconds: 3600,
   solution: "共有フォームと自動通知に置き換えた",
-  afterMinutes: 15,
+  afterSeconds: 900,
+  frequencyCount: 5,
+  frequencyPeriod: "week" as const,
 };
 
 function createContext(userId = 12): TrpcContext {
@@ -71,7 +73,7 @@ describe("improvement image generation routes", () => {
     expect(dbMocks.saveGeneratedImprovementImage).toHaveBeenCalledWith(
       42,
       "/api/storage/generated-case.png",
-      expect.stringContaining("45分削減 / 75%短縮"),
+      expect.stringContaining("年間195時間削減 / 75%短縮"),
     );
     expect(result).toEqual({ id: 42, imageUrl: "/api/storage/generated-case.png" });
   });
@@ -94,7 +96,7 @@ describe("improvement image generation routes", () => {
     expect(dbMocks.saveGeneratedImprovementImage).toHaveBeenCalledWith(
       42,
       "/api/storage/regenerated-case.png",
-      expect.stringContaining("45分削減 / 75%短縮"),
+      expect.stringContaining("年間195時間削減 / 75%短縮"),
     );
     expect(result).toEqual({ imageUrl: "/api/storage/regenerated-case.png" });
   });

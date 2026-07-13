@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
+import { formatDuration } from "@shared/improvementTime";
 import { ArrowRight, BookOpen, Clock3, Lightbulb, PenLine, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -26,7 +27,7 @@ export default function Home() {
   const statItems = [
     { label: "共有された気づき", value: stats?.insightCount ?? 0, unit: "件", icon: Lightbulb },
     { label: "公開された改善事例", value: stats?.improvementCount ?? 0, unit: "件", icon: BookOpen },
-    { label: "累計削減時間", value: stats?.savedMinutes ?? 0, unit: "分", icon: Clock3 },
+    { label: "年間削減時間", value: formatDuration(stats?.annualSavedSeconds ?? 0), unit: "", icon: Clock3 },
   ];
 
   return (

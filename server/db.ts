@@ -1,4 +1,4 @@
-import { and, desc, eq, like, type SQL } from "drizzle-orm";
+import { and, desc, eq, like, or, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   improvementCases,
@@ -243,9 +243,21 @@ export async function deleteImprovementCase(id: number, authorId: number) {
   ));
 }
 
-export async function listPublishedImprovementCases() {
+export async function listPublishedImprovementCases(query?: string) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
+  const normalizedQuery = query?.trim();
+  const searchCondition = normalizedQuery
+    ? or(
+      like(improvementCases.title, `%${normalizedQuery}%`),
+      like(users.name, `%${normalizedQuery}%`),
+      like(improvementCases.originalMethod, `%${normalizedQuery}%`),
+      like(improvementCases.problem, `%${normalizedQuery}%`),
+      like(improvementCases.solution, `%${normalizedQuery}%`),
+      like(improvementCases.workUrl, `%${normalizedQuery}%`),
+    )
+    : undefined;
+
   return db
     .select({
       id: improvementCases.id,
@@ -263,7 +275,7 @@ export async function listPublishedImprovementCases() {
     })
     .from(improvementCases)
     .leftJoin(users, eq(improvementCases.authorId, users.id))
-    .where(eq(improvementCases.status, "published"))
+    .where(and(eq(improvementCases.status, "published"), searchCondition))
     .orderBy(desc(improvementCases.publishedAt));
 }
 

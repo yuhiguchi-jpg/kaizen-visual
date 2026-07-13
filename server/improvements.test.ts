@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildImprovementImagePrompt, canDeleteImprovementCase, improvementInputSchema } from "./routers/improvements";
+import { clampImprovementImageZoom } from "../shared/improvementLibrary";
+import {
+  buildImprovementImagePrompt,
+  canDeleteImprovementCase,
+  improvementInputSchema,
+  improvementSearchInputSchema,
+} from "./routers/improvements";
 
 const caseInput = {
   title: "申請承認時間を75％短縮",
@@ -64,5 +70,18 @@ describe("improvement case deletion authorization", () => {
     expect(canDeleteImprovementCase({ authorId: 12 }, 12)).toBe(true);
     expect(canDeleteImprovementCase({ authorId: 12 }, 99)).toBe(false);
     expect(canDeleteImprovementCase(null, 12)).toBe(false);
+  });
+});
+
+describe("improvement library search and image zoom", () => {
+  it("trims a library search query and rejects an oversized query", () => {
+    expect(improvementSearchInputSchema.parse({ query: "  申請業務  " })).toEqual({ query: "申請業務" });
+    expect(improvementSearchInputSchema.safeParse({ query: "あ".repeat(201) }).success).toBe(false);
+  });
+
+  it("keeps image zoom within the supported range", () => {
+    expect(clampImprovementImageZoom(0.25)).toBe(0.5);
+    expect(clampImprovementImageZoom(1.75)).toBe(1.75);
+    expect(clampImprovementImageZoom(4)).toBe(3);
   });
 });

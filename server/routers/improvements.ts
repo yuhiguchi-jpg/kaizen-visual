@@ -28,6 +28,10 @@ export const improvementInputSchema = z.object({
   afterMinutes: z.number().int().min(0).max(100000),
 });
 
+export const improvementSearchInputSchema = z.object({
+  query: z.string().trim().max(200).optional(),
+}).optional();
+
 type ImprovementPromptInput = Pick<
   z.infer<typeof improvementInputSchema>,
   "title" | "originalMethod" | "problem" | "beforeMinutes" | "solution" | "afterMinutes"
@@ -60,7 +64,9 @@ export function canDeleteImprovementCase(item: { authorId: number } | null | und
 }
 
 export const improvementsRouter = router({
-  listPublished: protectedProcedure.query(() => listPublishedImprovementCases()),
+  listPublished: protectedProcedure
+    .input(improvementSearchInputSchema)
+    .query(({ input }) => listPublishedImprovementCases(input?.query)),
   saveDraft: protectedProcedure
     .input(improvementInputSchema.extend({ id: z.number().int().positive().optional() }))
     .mutation(async ({ ctx, input }) => {

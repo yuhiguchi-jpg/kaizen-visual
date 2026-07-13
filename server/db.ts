@@ -1,7 +1,9 @@
-import { and, desc, eq, like, or, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, like, or, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   improvementCases,
+  insightComments,
+  insightLikes,
   insightReactions,
   insights,
   InsertImprovementCase,
@@ -133,27 +135,25 @@ export async function listInsights(viewerId: number, filters: InsightFilters = {
     .where(and(...conditions))
     .orderBy(desc(insights.createdAt));
 
-  const reactionRows = await db
+  const likeRows = await db
     .select({
-      insightId: insightReactions.insightId,
-      userId: insightReactions.userId,
-      reaction: insightReactions.reaction,
+      insightId: insightLikes.insightId,
+      userId: insightLikes.userId,
     })
-    .from(insightReactions);
+    .from(insightLikes);
+
+  const commentRows = await db
+    .select({ insightId: insightComments.insightId })
+    .from(insightComments);
 
   return insightRows.map(row => {
-    const reactions = reactionRows.filter(reaction => reaction.insightId === row.id);
-    const counts = { spark: 0, agree: 0, thanks: 0, idea: 0 };
-    reactions.forEach(reaction => {
-      counts[reaction.reaction] += 1;
-    });
+    const likes = likeRows.filter(likeRow => likeRow.insightId === row.id);
     return {
       ...row,
       authorName: row.authorName || "メンバー",
-      reactionCounts: counts,
-      myReactions: reactions
-        .filter(reaction => reaction.userId === viewerId)
-        .map(reaction => reaction.reaction),
+      likeCount: likes.length,
+      likedByMe: likes.some(likeRow => likeRow.userId === viewerId),
+      commentCount: commentRows.filter(comment => comment.insightId === row.id).length,
     };
   });
 }
@@ -178,30 +178,67 @@ export async function deleteInsight(id: number, authorId: number) {
   await db.delete(insights).where(and(eq(insights.id, id), eq(insights.authorId, authorId)));
 }
 
-export async function toggleInsightReaction(
-  insightId: number,
-  userId: number,
-  reaction: "spark" | "agree" | "thanks" | "idea",
-) {
+export async function toggleInsightLike(insightId: number, userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
   const existing = await db
-    .select({ id: insightReactions.id })
-    .from(insightReactions)
+    .select({ id: insightLikes.id })
+    .from(insightLikes)
     .where(and(
-      eq(insightReactions.insightId, insightId),
-      eq(insightReactions.userId, userId),
-      eq(insightReactions.reaction, reaction),
+      eq(insightLikes.insightId, insightId),
+      eq(insightLikes.userId, userId),
     ))
     .limit(1);
 
   if (existing[0]) {
-    await db.delete(insightReactions).where(eq(insightReactions.id, existing[0].id));
+    await db.delete(insightLikes).where(eq(insightLikes.id, existing[0].id));
     return { active: false };
   }
 
-  await db.insert(insightReactions).values({ insightId, userId, reaction });
+  await db.insert(insightLikes).values({ insightId, userId });
   return { active: true };
+}
+
+export async function listInsightComments(insightId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  return db
+    .select({
+      id: insightComments.id,
+      insightId: insightComments.insightId,
+      content: insightComments.content,
+      createdAt: insightComments.createdAt,
+      updatedAt: insightComments.updatedAt,
+      authorId: insightComments.authorId,
+      authorName: users.name,
+    })
+    .from(insightComments)
+    .leftJoin(users, eq(insightComments.authorId, users.id))
+    .where(eq(insightComments.insightId, insightId))
+    .orderBy(asc(insightComments.createdAt));
+}
+
+export async function createInsightComment(insightId: number, authorId: number, content: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const result = await db.insert(insightComments).values({ insightId, authorId, content });
+  return Number(result[0].insertId);
+}
+
+export async function getInsightComment(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const rows = await db.select().from(insightComments).where(eq(insightComments.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function deleteInsightComment(id: number, authorId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.delete(insightComments).where(and(
+    eq(insightComments.id, id),
+    eq(insightComments.authorId, authorId),
+  ));
 }
 
 export async function createImprovementCase(input: InsertImprovementCase) {

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { INSIGHT_GENRES } from "../shared/insightGenres";
-import { canDeleteInsight, insightGenreSchema, insightListInputSchema } from "./routers/insights";
+import {
+  canDeleteInsight,
+  canDeleteInsightComment,
+  insightCommentContentSchema,
+  insightGenreSchema,
+  insightListInputSchema,
+} from "./routers/insights";
 
 describe("insight genres", () => {
   it("supports the DX implementation and adoption support taxonomy", () => {
@@ -34,5 +40,22 @@ describe("insight deletion authorization", () => {
     expect(canDeleteInsight({ authorId: 12 }, 12)).toBe(true);
     expect(canDeleteInsight({ authorId: 12 }, 99)).toBe(false);
     expect(canDeleteInsight(null, 12)).toBe(false);
+  });
+});
+
+describe("insight comments", () => {
+  it("trims valid comment content", () => {
+    expect(insightCommentContentSchema.parse(" 参考になりました ")).toBe("参考になりました");
+  });
+
+  it("rejects empty or excessively long comments", () => {
+    expect(insightCommentContentSchema.safeParse("   ").success).toBe(false);
+    expect(insightCommentContentSchema.safeParse("あ".repeat(501)).success).toBe(false);
+  });
+
+  it("allows only the author to delete a comment", () => {
+    expect(canDeleteInsightComment({ authorId: 12 }, 12)).toBe(true);
+    expect(canDeleteInsightComment({ authorId: 12 }, 99)).toBe(false);
+    expect(canDeleteInsightComment(undefined, 12)).toBe(false);
   });
 });

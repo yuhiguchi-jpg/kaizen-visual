@@ -50,6 +50,30 @@ export const insightReactions = mysqlTable("insight_reactions", {
   index("insight_reactions_user_idx").on(table.userId),
 ]);
 
+export const insightLikes = mysqlTable("insight_likes", {
+  id: int("id").autoincrement().primaryKey(),
+  insightId: int("insightId").notNull().references(() => insights.id, { onDelete: "cascade" }),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("insight_like_unique").on(table.insightId, table.userId),
+  index("insight_likes_insight_idx").on(table.insightId),
+  index("insight_likes_user_idx").on(table.userId),
+]);
+
+export const insightComments = mysqlTable("insight_comments", {
+  id: int("id").autoincrement().primaryKey(),
+  insightId: int("insightId").notNull().references(() => insights.id, { onDelete: "cascade" }),
+  authorId: int("authorId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("insight_comments_insight_idx").on(table.insightId),
+  index("insight_comments_author_idx").on(table.authorId),
+  index("insight_comments_created_idx").on(table.createdAt),
+]);
+
 export const improvementCases = mysqlTable("improvement_cases", {
   id: int("id").autoincrement().primaryKey(),
   authorId: int("authorId").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -75,5 +99,7 @@ export const improvementCases = mysqlTable("improvement_cases", {
 
 export type Insight = typeof insights.$inferSelect;
 export type InsertInsight = typeof insights.$inferInsert;
+export type InsightComment = typeof insightComments.$inferSelect;
+export type InsertInsightComment = typeof insightComments.$inferInsert;
 export type ImprovementCase = typeof improvementCases.$inferSelect;
 export type InsertImprovementCase = typeof improvementCases.$inferInsert;

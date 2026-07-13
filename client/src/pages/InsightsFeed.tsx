@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import InsightEngagementBar from "@/components/InsightEngagementBar";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -64,10 +63,11 @@ function InsightComments({ insightId, commentCount, currentUserId, likeAction, d
   const trimmedDraft = draft.trim();
 
   return (
-    <InsightEngagementBar
-      likeAction={likeAction}
-      commentAction={
-        <Button
+    <div className="mt-5">
+      <div data-insight-actions className="flex items-center justify-between gap-3 border-t border-border/60 pt-4">
+        <div data-insight-engagement className="flex min-w-0 flex-nowrap items-center gap-2">
+          {likeAction}
+          <Button
             type="button"
             variant="ghost"
             size="sm"
@@ -78,10 +78,10 @@ function InsightComments({ insightId, commentCount, currentUserId, likeAction, d
           >
             <MessageCircle className="mr-2 h-4 w-4" />
             コメント {commentCount}
-        </Button>
-      }
-      deleteAction={deleteAction}
-    >
+          </Button>
+        </div>
+        {deleteAction && <div data-insight-delete-action className="ml-auto shrink-0">{deleteAction}</div>}
+      </div>
       {isOpen && (
         <div id={`insight-comments-${insightId}`} data-insight-comments-panel className="mt-4 rounded-2xl bg-muted/45 p-4 sm:p-5">
           {isLoading ? (
@@ -118,7 +118,7 @@ function InsightComments({ insightId, commentCount, currentUserId, likeAction, d
           <p className="mt-1 text-right text-[10px] text-muted-foreground">{draft.length}/500</p>
         </div>
       )}
-    </InsightEngagementBar>
+    </div>
   );
 }
 

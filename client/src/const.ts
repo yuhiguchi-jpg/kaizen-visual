@@ -57,12 +57,17 @@ export function waitForLarkSdkReady(input: {
       resolve(bridge);
     };
     const timeoutId = globalThis.setTimeout(
-      () => finish(null),
+      () => finish(input.getBridge() ?? null),
       input.timeoutMs ?? 3_000
     );
 
     sdk.ready(() => finish(input.getBridge() ?? null));
-    sdk.error?.(() => finish(null));
+    // Lark Desktop can report a transient "cannot find pc bridge" while its
+    // WebView bridge is still starting. Do not turn that early SDK signal into
+    // an OAuth redirect; keep waiting for ready or the timeout instead.
+    sdk.error?.((error) => {
+      console.warn("[Lark Auth] SDK bridge is not ready yet", error);
+    });
   });
 }
 
@@ -149,8 +154,10 @@ export async function startLogin(): Promise<void> {
     }
     await startLarkInAppLogin(bridge);
   } catch (error) {
-    console.error("[Lark Auth] In-app login failed; using OAuth fallback", error);
-    window.location.assign("/api/oauth/lark/start");
+    // Stay on the login screen inside Lark. Redirecting to OAuth here can race
+    // with the in-app bridge and return with auth_error=invalid_state, which
+    // looks like a real authentication failure even though a retry succeeds.
+    console.warn("[Lark Auth] In-app login is not ready; login can be retried", error);
   } finally {
     loginInFlight = false;
   }

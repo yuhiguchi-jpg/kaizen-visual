@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   isLarkClient,
   requestLarkAccessCode,
+  startLogin,
   waitForLarkSdkReady,
   type LarkBridge,
   type LarkH5Sdk,
@@ -35,6 +36,66 @@ describe("Lark in-app access request", () => {
 
     await expect(resultPromise).resolves.toBe(bridge);
     expect(getBridge).toHaveBeenCalledOnce();
+  });
+
+  it("keeps waiting when the SDK reports a transient bridge error", async () => {
+    const bridge = { requestAccess: vi.fn() } as LarkBridge;
+    let readyCallback: (() => void) | undefined;
+    let errorCallback: ((error: unknown) => void) | undefined;
+    const sdk = {
+      ready(callback) {
+        readyCallback = callback;
+      },
+      error(callback) {
+        errorCallback = callback;
+      },
+    } as LarkH5Sdk;
+    const getBridge = vi.fn(() => bridge);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const resultPromise = waitForLarkSdkReady({ sdk, getBridge, timeoutMs: 1_000 });
+    errorCallback?.(new Error("cannot find pc bridge"));
+    expect(getBridge).not.toHaveBeenCalled();
+
+    readyCallback?.();
+
+    await expect(resultPromise).resolves.toBe(bridge);
+    expect(warn).toHaveBeenCalledOnce();
+    warn.mockRestore();
+  });
+
+  it("does not redirect to OAuth when an in-app access request temporarily fails", async () => {
+    const assign = vi.fn();
+    const requestAccess = vi.fn((options) => {
+      options.fail(new Error("cannot find pc bridge"));
+    });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ appId: "cli_test_app", state: "csrf-state" }),
+    });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("window", {
+      navigator: { userAgent: "Mozilla/5.0 Lark/7.0.0" },
+      h5sdk: { ready: (callback: () => void) => callback() },
+      tt: { requestAccess },
+      location: { assign, reload: vi.fn() },
+    });
+
+    try {
+      await startLogin();
+
+      expect(requestAccess).toHaveBeenCalledOnce();
+      expect(assign).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(
+        "[Lark Auth] In-app login is not ready; login can be retried",
+        expect.any(Error),
+      );
+    } finally {
+      vi.unstubAllGlobals();
+      warn.mockRestore();
+    }
   });
 
   it("requests only basic sign-in credentials with an empty scope list", async () => {

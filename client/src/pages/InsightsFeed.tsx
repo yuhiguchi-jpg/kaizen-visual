@@ -20,6 +20,7 @@ import { trpc } from "@/lib/trpc";
 import { formatDisplayName } from "@shared/displayName";
 import { INSIGHT_GENRES, type InsightGenre } from "@shared/insightGenres";
 import { Heart, Lightbulb, Loader2, MessageCircle, PenLine, Search, Send, Trash2, UserRound, X } from "lucide-react";
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -28,9 +29,11 @@ type InsightCommentsProps = {
   insightId: number;
   commentCount: number;
   currentUserId?: number;
+  likeAction: ReactNode;
+  deleteAction?: ReactNode;
 };
 
-function InsightComments({ insightId, commentCount, currentUserId }: InsightCommentsProps) {
+function InsightComments({ insightId, commentCount, currentUserId, likeAction, deleteAction }: InsightCommentsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const utils = trpc.useUtils();
@@ -60,18 +63,22 @@ function InsightComments({ insightId, commentCount, currentUserId }: InsightComm
   const trimmedDraft = draft.trim();
 
   return (
-    <div className="mt-5 border-t border-border/60 pt-4">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(current => !current)}
-        aria-expanded={isOpen}
-        className="h-9 rounded-full px-3 text-muted-foreground hover:bg-accent hover:text-primary"
-      >
-        <MessageCircle className="mr-2 h-4 w-4" />
-        コメント {commentCount}
-      </Button>
+    <div className="mt-5">
+      <div data-insight-actions className="flex items-center gap-2 border-t border-border/60 pt-4">
+        {likeAction}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsOpen(current => !current)}
+          aria-expanded={isOpen}
+          className="h-9 rounded-full px-3 text-muted-foreground hover:bg-accent hover:text-primary"
+        >
+          <MessageCircle className="mr-2 h-4 w-4" />
+          コメント {commentCount}
+        </Button>
+        {deleteAction && <div className="ml-auto">{deleteAction}</div>}
+      </div>
 
       {isOpen && (
         <div className="mt-4 rounded-2xl bg-muted/45 p-4 sm:p-5">
@@ -195,11 +202,13 @@ export default function InsightsFeed() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{formatDisplayName(item.authorName, "メンバー")}</p><span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-primary">{item.genre}</span></div><time className="text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>
                   <p className="mt-4 whitespace-pre-wrap text-[15px] leading-8 text-foreground/90">{item.content}</p>
-                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                    <Button type="button" variant="outline" size="sm" aria-pressed={item.likedByMe} onClick={() => toggleLike.mutate({ insightId: item.id })} disabled={toggleLike.isPending} className={`h-9 rounded-full px-3 ${item.likedByMe ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700" : "border-border/70 bg-white/50 text-muted-foreground hover:bg-white"}`}><Heart className={`mr-2 h-4 w-4 ${item.likedByMe ? "fill-current" : ""}`} />いいね {item.likeCount}</Button>
-                    {user?.id === item.authorId && <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="mr-2 h-3.5 w-3.5" />削除</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>この気づきを削除しますか？</AlertDialogTitle><AlertDialogDescription>投稿した気づきと、その気づきに付いたいいね・コメントを削除します。この操作は取り消せません。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>キャンセル</AlertDialogCancel><AlertDialogAction onClick={() => removeInsight.mutate({ id: item.id })} disabled={removeInsight.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">削除する</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
-                  </div>
-                  <InsightComments insightId={item.id} commentCount={item.commentCount} currentUserId={user?.id} />
+                  <InsightComments
+                    insightId={item.id}
+                    commentCount={item.commentCount}
+                    currentUserId={user?.id}
+                    likeAction={<Button type="button" variant="outline" size="sm" aria-pressed={item.likedByMe} onClick={() => toggleLike.mutate({ insightId: item.id })} disabled={toggleLike.isPending} className={`h-9 rounded-full px-3 ${item.likedByMe ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700" : "border-border/70 bg-white/50 text-muted-foreground hover:bg-white"}`}><Heart className={`mr-2 h-4 w-4 ${item.likedByMe ? "fill-current" : ""}`} />いいね {item.likeCount}</Button>}
+                    deleteAction={user?.id === item.authorId ? <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="mr-2 h-3.5 w-3.5" />削除</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>この気づきを削除しますか？</AlertDialogTitle><AlertDialogDescription>投稿した気づきと、その気づきに付いたいいね・コメントを削除します。この操作は取り消せません。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>キャンセル</AlertDialogCancel><AlertDialogAction onClick={() => removeInsight.mutate({ id: item.id })} disabled={removeInsight.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">削除する</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog> : undefined}
+                  />
                 </div>
               </div>
             </article>

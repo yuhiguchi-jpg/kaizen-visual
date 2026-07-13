@@ -36,5 +36,8 @@ describe("みんなの気づきのいいね・コメント接続", () => {
     expect(source).toContain("<Heart");
     expect(source).toContain("<MessageCircle");
     expect(source).toContain("コメントを書く");
+    expect(source).toContain("data-insight-actions");
+    expect(source).toContain("aria-expanded={isOpen}");
+    expect(source).toContain("{isOpen && (");
   });
 });

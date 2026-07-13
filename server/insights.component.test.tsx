@@ -107,6 +107,12 @@ describe("みんなの気づきのいいね・コメントUI", () => {
     expect(screen.getByRole("heading", { name: "みんなの気づき" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "いいね 3" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "コメント 1" })).toBeTruthy();
+    const actionRow = container.querySelector("[data-insight-actions]");
+    expect(actionRow).toBeTruthy();
+    expect(actionRow?.contains(screen.getByRole("button", { name: "いいね 3" }))).toBe(true);
+    expect(actionRow?.contains(screen.getByRole("button", { name: "コメント 1" }))).toBe(true);
+    expect(screen.queryByRole("textbox", { name: "コメント本文" })).toBeNull();
+    expect(screen.queryByText(comment.content)).toBeNull();
     expect(container.querySelector(".sm\\:px-8.lg\\:px-12")).toBeTruthy();
     expect(container.querySelector("article.sm\\:p-7")).toBeTruthy();
 
@@ -121,6 +127,7 @@ describe("みんなの気づきのいいね・コメントUI", () => {
 
     await user.click(screen.getByRole("button", { name: "コメント 1" }));
 
+    expect(screen.getByRole("button", { name: "コメント 1" }).getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByText(comment.content)).toBeTruthy();
     expect(screen.getByRole("button", { name: "コメントを削除" })).toBeTruthy();
     expect(container.querySelector(".sm\\:p-5")).toBeTruthy();

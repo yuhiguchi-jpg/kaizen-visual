@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   isLarkClient,
   requestLarkAccessCode,
+  requestLarkAccessCodeWithRetry,
   startLogin,
   waitForLarkSdkReady,
   type LarkBridge,
@@ -64,7 +65,7 @@ describe("Lark in-app access request", () => {
     warn.mockRestore();
   });
 
-  it("does not redirect to OAuth when an in-app access request temporarily fails", async () => {
+  it("falls back to OAuth when a user-started in-app access request fails", async () => {
     const assign = vi.fn();
     const requestAccess = vi.fn((options) => {
       options.fail(new Error("cannot find pc bridge"));
@@ -86,10 +87,10 @@ describe("Lark in-app access request", () => {
     try {
       await startLogin();
 
-      expect(requestAccess).toHaveBeenCalledOnce();
-      expect(assign).not.toHaveBeenCalled();
+      expect(requestAccess).toHaveBeenCalledTimes(2);
+      expect(assign).toHaveBeenCalledWith("/api/oauth/lark/start");
       expect(warn).toHaveBeenCalledWith(
-        "[Lark Auth] In-app login is not ready; login can be retried",
+        "[Lark Auth] In-app login failed; using OAuth fallback",
         expect.any(Error),
       );
     } finally {
@@ -118,6 +119,23 @@ describe("Lark in-app access request", () => {
         scopeList: [],
       })
     );
+  });
+
+  it("retries a transient bridge failure before using another login path", async () => {
+    const requestAccess = vi.fn()
+      .mockImplementationOnce(options => options.fail(new Error("cannot find pc bridge")))
+      .mockImplementationOnce(options => options.success({ code: "retry-code", state: options.state }));
+    const bridge = { requestAccess } as LarkBridge;
+
+    await expect(
+      requestLarkAccessCodeWithRetry(
+        bridge,
+        { appId: "cli_test_app", state: "csrf-state" },
+        { retryDelayMs: 0 },
+      ),
+    ).resolves.toEqual({ code: "retry-code", state: "csrf-state" });
+
+    expect(requestAccess).toHaveBeenCalledTimes(2);
   });
 
   it("falls back to requestAuthCode on older Lark clients", async () => {

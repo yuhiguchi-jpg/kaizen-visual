@@ -100,6 +100,30 @@ export function requestLarkAccessCode(
   });
 }
 
+export async function requestLarkAccessCodeWithRetry(
+  bridge: LarkBridge,
+  config: { appId: string; state: string },
+  options?: { attempts?: number; retryDelayMs?: number },
+): Promise<LarkAccessResult> {
+  const attempts = Math.max(1, options?.attempts ?? 2);
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await requestLarkAccessCode(bridge, config);
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) {
+        await new Promise(resolve =>
+          globalThis.setTimeout(resolve, options?.retryDelayMs ?? 400),
+        );
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 async function startLarkInAppLogin(bridge: LarkBridge): Promise<void> {
   const configResponse = await fetch("/api/oauth/lark/config", {
     credentials: "include",
@@ -112,7 +136,7 @@ async function startLarkInAppLogin(bridge: LarkBridge): Promise<void> {
     state: string;
   };
 
-  const access = await requestLarkAccessCode(bridge, config);
+  const access = await requestLarkAccessCodeWithRetry(bridge, config);
 
   const response = await fetch("/api/oauth/lark/code", {
     method: "POST",
@@ -154,10 +178,11 @@ export async function startLogin(): Promise<void> {
     }
     await startLarkInAppLogin(bridge);
   } catch (error) {
-    // Stay on the login screen inside Lark. Redirecting to OAuth here can race
-    // with the in-app bridge and return with auth_error=invalid_state, which
-    // looks like a real authentication failure even though a retry succeeds.
-    console.warn("[Lark Auth] In-app login is not ready; login can be retried", error);
+    // This function is now called only from an explicit user action. If the
+    // in-app bridge is unavailable, continue with the regular OAuth flow so
+    // the login button always has a working recovery path.
+    console.warn("[Lark Auth] In-app login failed; using OAuth fallback", error);
+    window.location.assign("/api/oauth/lark/start");
   } finally {
     loginInFlight = false;
   }

@@ -38,12 +38,12 @@ describe("image generation service", () => {
     );
     storagePutMock.mockResolvedValue({
       key: "generated/test.png",
-      url: "/manus-storage/generated/test.png",
+      url: "/api/storage/generated/test.png",
     });
 
     const result = await generateImage({ prompt: "改善事例を画像化" });
 
-    expect(result).toEqual({ url: "/manus-storage/generated/test.png" });
+    expect(result).toEqual({ url: "/api/storage/generated/test.png" });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [requestUrl, requestInit] = fetchMock.mock.calls[0];
     expect(requestUrl).toBe("https://forge.test/api/images.v1.ImageService/GenerateImage");

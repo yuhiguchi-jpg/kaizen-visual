@@ -58,4 +58,22 @@ describe("Lark in-app access request", () => {
       })
     );
   });
+
+  it("falls back to requestAuthCode on older Lark clients", async () => {
+    const requestAuthCode = vi.fn((options) => {
+      options.success({ code: "legacy-code" });
+    });
+    const bridge = { requestAuthCode } as LarkBridge;
+
+    await expect(
+      requestLarkAccessCode(bridge, {
+        appId: "cli_test_app",
+        state: "csrf-state",
+      }),
+    ).resolves.toEqual({ code: "legacy-code", state: "csrf-state" });
+
+    expect(requestAuthCode).toHaveBeenCalledWith(
+      expect.objectContaining({ appId: "cli_test_app" }),
+    );
+  });
 });

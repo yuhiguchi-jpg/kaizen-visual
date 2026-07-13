@@ -12,6 +12,10 @@ import {
   registerStorageProxy,
   resolveStorageContentType,
 } from "./_core/storageProxy";
+import {
+  buildStoragePublicUrl,
+  normalizeStoragePublicUrl,
+} from "./storage";
 
 const nativeFetch = globalThis.fetch;
 
@@ -21,6 +25,18 @@ afterEach(() => {
 });
 
 describe("storage proxy", () => {
+  it("uses an application-owned path and upgrades legacy database URLs", () => {
+    expect(buildStoragePublicUrl("generated/example.png")).toBe(
+      "/api/storage/generated/example.png",
+    );
+    expect(normalizeStoragePublicUrl("/manus-storage/generated/example.png")).toBe(
+      "/api/storage/generated/example.png",
+    );
+    expect(normalizeStoragePublicUrl("https://cdn.example/example.png")).toBe(
+      "https://cdn.example/example.png",
+    );
+  });
+
   it("uses the file extension when storage returns a generic MIME type", () => {
     expect(resolveStorageContentType("generated/example.png", "application/octet-stream"))
       .toBe("image/png");
@@ -60,7 +76,7 @@ describe("storage proxy", () => {
       if (!address || typeof address === "string") throw new Error("Missing test server address");
 
       const response = await nativeFetch(
-        `http://127.0.0.1:${address.port}/manus-storage/generated/test.png`,
+        `http://127.0.0.1:${address.port}/api/storage/generated/test.png`,
       );
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toContain("image/png");

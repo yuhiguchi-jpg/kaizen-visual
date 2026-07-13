@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { listImageModels } from "./_core/imageGeneration";
+import { generateImage, listImageModels } from "./_core/imageGeneration";
 import { storageGetSignedUrl, storagePut } from "./storage";
 
 const describeIntegration = process.env.RUN_IMAGE_INFRA_INTEGRATION_TEST === "1"
@@ -18,11 +18,21 @@ describeIntegration("image generation infrastructure", () => {
       "text/plain; charset=utf-8",
     );
 
-    expect(stored.url).toBe(`/manus-storage/${stored.key}`);
+    expect(stored.url).toBe(`/api/storage/${stored.key}`);
 
     const signedUrl = await storageGetSignedUrl(stored.key);
     const response = await fetch(signedUrl);
     expect(response.ok).toBe(true);
     expect(await response.text()).toBe(marker);
   }, 30_000);
+
+  it("generates and stores an image with the configured Forge credential", async () => {
+    const generated = await generateImage({
+      prompt: "A simple blue circle centered on a white background, no text",
+      model: "MODEL_GPT_IMAGE_2",
+      quality: "low",
+    });
+
+    expect(generated.url).toMatch(/^\/api\/storage\/generated\/.+\.png$/);
+  }, 180_000);
 });

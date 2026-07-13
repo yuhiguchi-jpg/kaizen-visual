@@ -6,11 +6,16 @@ export type LarkAccessResult = {
 };
 
 export type LarkBridge = {
-  requestAccess(options: {
+  requestAccess?(options: {
     scopeList: string[];
     appID: string;
     state: string;
     success(result: LarkAccessResult): void;
+    fail(error: unknown): void;
+  }): void;
+  requestAuthCode?(options: {
+    appId: string;
+    success(result: { code: string }): void;
     fail(error: unknown): void;
   }): void;
 };
@@ -66,13 +71,27 @@ export function requestLarkAccessCode(
   config: { appId: string; state: string }
 ): Promise<LarkAccessResult> {
   return new Promise<LarkAccessResult>((resolve, reject) => {
-    bridge.requestAccess({
-      scopeList: [],
-      appID: config.appId,
-      state: config.state,
-      success: resolve,
-      fail: reject,
-    });
+    if (bridge.requestAccess) {
+      bridge.requestAccess({
+        scopeList: [],
+        appID: config.appId,
+        state: config.state,
+        success: resolve,
+        fail: reject,
+      });
+      return;
+    }
+
+    if (bridge.requestAuthCode) {
+      bridge.requestAuthCode({
+        appId: config.appId,
+        success: ({ code }) => resolve({ code, state: config.state }),
+        fail: reject,
+      });
+      return;
+    }
+
+    reject(new Error("Lark authorization API is not available"));
   });
 }
 
@@ -125,7 +144,7 @@ export async function startLogin(): Promise<void> {
       sdk: window.h5sdk,
       getBridge: () => window.tt,
     });
-    if (!bridge?.requestAccess) {
+    if (!bridge?.requestAccess && !bridge?.requestAuthCode) {
       throw new Error("Lark H5 SDK is not available");
     }
     await startLarkInAppLogin(bridge);

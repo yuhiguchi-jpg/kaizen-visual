@@ -12,6 +12,7 @@ import {
   users,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { normalizeStoragePublicUrl } from './storage';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -319,7 +320,7 @@ export async function listPublishedImprovementCases(query?: string) {
     )
     : undefined;
 
-  return db
+  const rows = await db
     .select({
       id: improvementCases.id,
       authorId: improvementCases.authorId,
@@ -338,6 +339,11 @@ export async function listPublishedImprovementCases(query?: string) {
     .leftJoin(users, eq(improvementCases.authorId, users.id))
     .where(and(eq(improvementCases.status, "published"), searchCondition))
     .orderBy(desc(improvementCases.publishedAt));
+
+  return rows.map(row => ({
+    ...row,
+    imageUrl: normalizeStoragePublicUrl(row.imageUrl),
+  }));
 }
 
 export async function getKnowledgeStats() {

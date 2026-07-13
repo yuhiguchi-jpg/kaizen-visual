@@ -3,6 +3,7 @@ import { ENV } from "./_core/env";
 import {
   buildLarkAuthorizationUrl,
   exchangeLarkCode,
+  exchangeLarkInAppCode,
   getLarkUserInfo,
   toLarkOpenId,
 } from "./_core/larkAuth";
@@ -67,6 +68,44 @@ describe("Lark OAuth", () => {
       client_secret: "test-secret",
       code: "temporary-code",
       redirect_uri: "https://kaizen.example/api/oauth/lark/callback",
+    });
+  });
+
+  it("exchanges an in-app pre-authorization code using the app token and v1 endpoint", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ code: 0, app_access_token: "app-access-token" }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ code: 0, data: { access_token: "user-access-token" } }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+    globalThis.fetch = fetchMock;
+
+    await expect(exchangeLarkInAppCode("in-app-code")).resolves.toBe(
+      "user-access-token",
+    );
+
+    const [appUrl, appInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(appUrl).toContain("/open-apis/auth/v3/app_access_token/internal");
+    expect(JSON.parse(String(appInit.body))).toEqual({
+      app_id: "cli_test_app",
+      app_secret: "test-secret",
+    });
+
+    const [tokenUrl, tokenInit] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(tokenUrl).toContain("/open-apis/authen/v1/access_token");
+    expect(tokenInit.headers).toMatchObject({
+      Authorization: "Bearer app-access-token",
+    });
+    expect(JSON.parse(String(tokenInit.body))).toEqual({
+      grant_type: "authorization_code",
+      code: "in-app-code",
     });
   });
 

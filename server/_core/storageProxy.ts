@@ -1,4 +1,5 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
+import { STORAGE_PUBLIC_PREFIX } from "../storage";
 import { ENV } from "./env";
 
 const CONTENT_TYPES_BY_EXTENSION: Record<string, string> = {
@@ -24,7 +25,7 @@ export function resolveStorageContentType(
 }
 
 export function registerStorageProxy(app: Express) {
-  app.get("/manus-storage/*", async (req, res) => {
+  const serveStoredObject = async (req: Request, res: Response) => {
     const key = (req.params as Record<string, string>)[0];
     if (!key) {
       res.status(400).send("Missing storage key");
@@ -83,5 +84,10 @@ export function registerStorageProxy(app: Express) {
       console.error("[StorageProxy] failed:", err);
       res.status(502).send("Storage proxy error");
     }
-  });
+  };
+
+  app.get(`${STORAGE_PUBLIC_PREFIX}/*`, serveStoredObject);
+  // Development compatibility only. In production `/manus-storage/*` is a
+  // platform-reserved route and may be intercepted before Express.
+  app.get("/manus-storage/*", serveStoredObject);
 }

@@ -8,6 +8,7 @@ import { ENV } from "./env";
 import {
   buildLarkAuthorizationUrl,
   exchangeLarkCode,
+  exchangeLarkInAppCode,
   getLarkUserInfo,
   toLarkOpenId,
 } from "./larkAuth";
@@ -66,9 +67,11 @@ async function completeLarkLogin(
   req: Request,
   res: Response,
   code: string,
-  redirectUri?: string
+  options?: { redirectUri?: string; inApp?: boolean }
 ) {
-  const accessToken = await exchangeLarkCode(code, redirectUri);
+  const accessToken = options?.inApp
+    ? await exchangeLarkInAppCode(code)
+    : await exchangeLarkCode(code, options?.redirectUri);
   const larkUser = await getLarkUserInfo(accessToken);
   const openId = toLarkOpenId(larkUser.openId);
 
@@ -125,7 +128,9 @@ export function registerOAuthRoutes(app: Express) {
 
     clearStateCookie(req, res);
     try {
-      await completeLarkLogin(req, res, code, getRedirectUri(req));
+      await completeLarkLogin(req, res, code, {
+        redirectUri: getRedirectUri(req),
+      });
       res.redirect(302, "/");
     } catch (error) {
       console.error("[Lark OAuth] Callback failed", error);
@@ -155,7 +160,7 @@ export function registerOAuthRoutes(app: Express) {
 
     clearStateCookie(req, res);
     try {
-      const user = await completeLarkLogin(req, res, code);
+      const user = await completeLarkLogin(req, res, code, { inApp: true });
       res.json({ success: true, user });
     } catch (error) {
       console.error("[Lark OAuth] In-app login failed", error);

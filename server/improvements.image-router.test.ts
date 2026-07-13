@@ -58,7 +58,7 @@ describe("improvement image generation routes", () => {
 
   it("generates an image for a new draft, saves it, and returns its URL", async () => {
     dbMocks.createImprovementCase.mockResolvedValue(42);
-    imageMocks.generateImage.mockResolvedValue({ url: "/manus-storage/generated-case.png" });
+    imageMocks.generateImage.mockResolvedValue({ url: "/api/storage/generated-case.png" });
 
     const result = await improvementsRouter.createCaller(createContext()).generate(caseInput);
 
@@ -70,10 +70,10 @@ describe("improvement image generation routes", () => {
     });
     expect(dbMocks.saveGeneratedImprovementImage).toHaveBeenCalledWith(
       42,
-      "/manus-storage/generated-case.png",
+      "/api/storage/generated-case.png",
       expect.stringContaining("45分削減 / 75%短縮"),
     );
-    expect(result).toEqual({ id: 42, imageUrl: "/manus-storage/generated-case.png" });
+    expect(result).toEqual({ id: 42, imageUrl: "/api/storage/generated-case.png" });
   });
 
   it("regenerates and saves an image only for the signed-in author", async () => {
@@ -82,7 +82,7 @@ describe("improvement image generation routes", () => {
       authorId: 12,
       ...caseInput,
     });
-    imageMocks.generateImage.mockResolvedValue({ url: "/manus-storage/regenerated-case.png" });
+    imageMocks.generateImage.mockResolvedValue({ url: "/api/storage/regenerated-case.png" });
 
     const result = await improvementsRouter.createCaller(createContext()).regenerate({ id: 42 });
 
@@ -93,10 +93,10 @@ describe("improvement image generation routes", () => {
     });
     expect(dbMocks.saveGeneratedImprovementImage).toHaveBeenCalledWith(
       42,
-      "/manus-storage/regenerated-case.png",
+      "/api/storage/regenerated-case.png",
       expect.stringContaining("45分削減 / 75%短縮"),
     );
-    expect(result).toEqual({ imageUrl: "/manus-storage/regenerated-case.png" });
+    expect(result).toEqual({ imageUrl: "/api/storage/regenerated-case.png" });
   });
 
   it("maps an upstream generation failure to a user-facing tRPC error", async () => {

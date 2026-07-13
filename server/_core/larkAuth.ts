@@ -4,6 +4,10 @@ const LARK_AUTHORIZE_URL =
   "https://accounts.larksuite.com/open-apis/authen/v1/authorize";
 const LARK_TOKEN_URL =
   "https://open.larksuite.com/open-apis/authen/v2/oauth/token";
+const LARK_APP_ACCESS_TOKEN_URL =
+  "https://open.larksuite.com/open-apis/auth/v3/app_access_token/internal";
+const LARK_IN_APP_TOKEN_URL =
+  "https://open.larksuite.com/open-apis/authen/v1/access_token";
 const LARK_USER_INFO_URL =
   "https://open.larksuite.com/open-apis/authen/v1/user_info";
 
@@ -14,6 +18,18 @@ type LarkTokenResponse = {
   expires_in?: number;
   error?: string;
   error_description?: string;
+};
+
+type LarkAppAccessTokenResponse = {
+  code?: string | number;
+  msg?: string;
+  app_access_token?: string;
+};
+
+type LarkInAppTokenResponse = {
+  code?: string | number;
+  msg?: string;
+  data?: { access_token?: string };
 };
 
 type LarkUserInfoResponse = {
@@ -92,6 +108,51 @@ export async function exchangeLarkCode(
   }
 
   return payload.access_token;
+}
+
+/** Exchange a code issued by tt.requestAccess or tt.requestAuthCode. */
+export async function exchangeLarkInAppCode(code: string): Promise<string> {
+  requireLarkCredentials();
+
+  const appTokenResponse = await fetch(LARK_APP_ACCESS_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify({
+      app_id: ENV.larkAppId,
+      app_secret: ENV.larkAppSecret,
+    }),
+    signal: AbortSignal.timeout(30_000),
+  });
+  const appTokenPayload =
+    (await appTokenResponse.json()) as LarkAppAccessTokenResponse;
+  if (
+    !appTokenResponse.ok ||
+    !isSuccessCode(appTokenPayload.code) ||
+    !appTokenPayload.app_access_token
+  ) {
+    throw new Error(
+      `Lark app access token request failed: ${appTokenPayload.msg || `HTTP ${appTokenResponse.status}`}`,
+    );
+  }
+
+  const tokenResponse = await fetch(LARK_IN_APP_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${appTokenPayload.app_access_token}`,
+      "Content-Type": "application/json; charset=utf-8",
+    },
+    body: JSON.stringify({ grant_type: "authorization_code", code }),
+    signal: AbortSignal.timeout(30_000),
+  });
+  const tokenPayload = (await tokenResponse.json()) as LarkInAppTokenResponse;
+  const accessToken = tokenPayload.data?.access_token;
+  if (!tokenResponse.ok || !isSuccessCode(tokenPayload.code) || !accessToken) {
+    throw new Error(
+      `Lark in-app code exchange failed: ${tokenPayload.msg || `HTTP ${tokenResponse.status}`}`,
+    );
+  }
+
+  return accessToken;
 }
 
 export async function getLarkUserInfo(

@@ -1,8 +1,11 @@
 // Preconfigured storage helpers for Manus WebDev templates
 // Uploads via Forge Server presigned URL to S3 (PUT direct).
-// Downloads return /manus-storage/{key} paths served via 307 redirect.
+// Downloads return application-owned /api/storage/{key} paths so the server can
+// restore the correct MIME type even when the underlying object is octet-stream.
 
 import { ENV } from "./_core/env";
+
+export const STORAGE_PUBLIC_PREFIX = "/api/storage";
 
 function getForgeConfig() {
   const forgeUrl = ENV.forgeApiUrl;
@@ -19,6 +22,20 @@ function getForgeConfig() {
 
 function normalizeKey(relKey: string): string {
   return relKey.replace(/^\/+/, "");
+}
+
+export function buildStoragePublicUrl(relKey: string): string {
+  return `${STORAGE_PUBLIC_PREFIX}/${normalizeKey(relKey)}`;
+}
+
+export function normalizeStoragePublicUrl(
+  url: string | null | undefined,
+): string | null {
+  if (!url) return null;
+  if (url.startsWith("/manus-storage/")) {
+    return buildStoragePublicUrl(url.slice("/manus-storage/".length));
+  }
+  return url;
 }
 
 function appendHashSuffix(relKey: string): string {
@@ -68,12 +85,12 @@ export async function storagePut(
     throw new Error(`Storage upload to S3 failed (${uploadResp.status})`);
   }
 
-  return { key, url: `/manus-storage/${key}` };
+  return { key, url: buildStoragePublicUrl(key) };
 }
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
-  return { key, url: `/manus-storage/${key}` };
+  return { key, url: buildStoragePublicUrl(key) };
 }
 
 export async function storageGetSignedUrl(relKey: string): Promise<string> {

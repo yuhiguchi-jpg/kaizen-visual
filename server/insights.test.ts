@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { INSIGHT_GENRES } from "../shared/insightGenres";
-import { insightGenreSchema, insightListInputSchema } from "./routers/insights";
+import { canDeleteInsight, insightGenreSchema, insightListInputSchema } from "./routers/insights";
 
 describe("insight genres", () => {
   it("supports the DX implementation and adoption support taxonomy", () => {
@@ -26,5 +26,13 @@ describe("insight list filters", () => {
   it("rejects excessively long search text", () => {
     expect(insightListInputSchema.safeParse({ keyword: "あ".repeat(201) }).success).toBe(false);
     expect(insightListInputSchema.safeParse({ author: "あ".repeat(101) }).success).toBe(false);
+  });
+});
+
+describe("insight deletion authorization", () => {
+  it("allows only the author to delete an insight", () => {
+    expect(canDeleteInsight({ authorId: 12 }, 12)).toBe(true);
+    expect(canDeleteInsight({ authorId: 12 }, 99)).toBe(false);
+    expect(canDeleteInsight(null, 12)).toBe(false);
   });
 });

@@ -1,3 +1,15 @@
+import { useAuth } from "@/_core/hooks/useAuth";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { INSIGHT_GENRES, type InsightGenre } from "@shared/insightGenres";
-import { Lightbulb, PenLine, Search, UserRound, X } from "lucide-react";
+import { Lightbulb, PenLine, Search, Trash2, UserRound, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -19,6 +31,7 @@ const reactions = [
 
 export default function InsightsFeed() {
   const [, navigate] = useLocation();
+  const { user } = useAuth();
   const [genre, setGenre] = useState<InsightGenre | "all">("all");
   const [keyword, setKeyword] = useState("");
   const [author, setAuthor] = useState("");
@@ -33,6 +46,23 @@ export default function InsightsFeed() {
   const toggle = trpc.insights.toggleReaction.useMutation({
     onSuccess: () => utils.insights.list.invalidate(),
     onError: error => toast.error(error.message || "リアクションできませんでした"),
+  });
+  const removeInsight = trpc.insights.delete.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.insights.list.cancel(filters);
+      const previous = utils.insights.list.getData(filters);
+      utils.insights.list.setData(filters, current => current?.filter(item => item.id !== id));
+      return { previous };
+    },
+    onSuccess: async () => {
+      await utils.dashboard.stats.invalidate();
+      toast.success("気づきを削除しました");
+    },
+    onError: (error, _input, context) => {
+      if (context?.previous) utils.insights.list.setData(filters, context.previous);
+      toast.error(error.message || "気づきを削除できませんでした");
+    },
+    onSettled: () => utils.insights.list.invalidate(filters),
   });
   const clearFilters = () => { setGenre("all"); setKeyword(""); setAuthor(""); };
 
@@ -68,7 +98,10 @@ export default function InsightsFeed() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{item.authorName}</p><span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-primary">{item.genre}</span></div><time className="text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>
                   <p className="mt-4 whitespace-pre-wrap text-[15px] leading-8 text-foreground/90">{item.content}</p>
-                  <div className="mt-5 flex flex-wrap gap-2">{reactions.map(reaction => { const active = item.myReactions.includes(reaction.key); const count = item.reactionCounts[reaction.key]; return <button key={reaction.key} title={reaction.label} aria-pressed={active} onClick={() => toggle.mutate({ insightId: item.id, reaction: reaction.key })} className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-medium ${active ? "border-primary/25 bg-accent text-primary shadow-sm" : "border-border/70 bg-white/50 text-muted-foreground hover:bg-white"}`}><span aria-hidden>{reaction.emoji}</span><span>{count}</span></button>; })}</div>
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap gap-2">{reactions.map(reaction => { const active = item.myReactions.includes(reaction.key); const count = item.reactionCounts[reaction.key]; return <button key={reaction.key} title={reaction.label} aria-pressed={active} onClick={() => toggle.mutate({ insightId: item.id, reaction: reaction.key })} className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-medium ${active ? "border-primary/25 bg-accent text-primary shadow-sm" : "border-border/70 bg-white/50 text-muted-foreground hover:bg-white"}`}><span aria-hidden>{reaction.emoji}</span><span>{count}</span></button>; })}</div>
+                    {user?.id === item.authorId && <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="mr-2 h-3.5 w-3.5" />削除</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>この気づきを削除しますか？</AlertDialogTitle><AlertDialogDescription>投稿した気づきと、その気づきに付いたリアクションを削除します。この操作は取り消せません。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>キャンセル</AlertDialogCancel><AlertDialogAction onClick={() => removeInsight.mutate({ id: item.id })} disabled={removeInsight.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">削除する</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
+                  </div>
                 </div>
               </div>
             </article>

@@ -165,6 +165,19 @@ export async function insightExists(id: number) {
   return Boolean(rows[0]);
 }
 
+export async function getInsight(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const rows = await db.select().from(insights).where(eq(insights.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function deleteInsight(id: number, authorId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.delete(insights).where(and(eq(insights.id, id), eq(insights.authorId, authorId)));
+}
+
 export async function toggleInsightReaction(
   insightId: number,
   userId: number,

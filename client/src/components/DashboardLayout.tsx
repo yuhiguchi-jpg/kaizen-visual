@@ -74,7 +74,7 @@ export default function DashboardLayout({
             <div className="flex flex-col gap-4">
               <p className="eyebrow">Welcome back</p>
               <h2 className="page-title text-3xl font-semibold">チームの知恵へ<br />アクセスする</h2>
-              <p className="text-sm leading-7 text-muted-foreground">Larkアカウントでログインすると、気づきの投稿や改善事例の共有を始められます。Lark内では画面を移動せずにログインできます。</p>
+              <p className="text-sm leading-7 text-muted-foreground">Larkアカウントでログインすると、気づきの投稿や改善事例の共有を始められます。Lark内でも通常ブラウザと同じ認証手順でログインできます。</p>
           </div>
           <Button
             onClick={() => void startLogin()}

@@ -155,35 +155,13 @@ async function startLarkInAppLogin(bridge: LarkBridge): Promise<void> {
 }
 
 /**
- * Start Lark sign-in. Inside Lark this uses tt.requestAccess without leaving the
- * app; ordinary browsers are redirected to Lark OAuth.
+ * Start Lark sign-in through the same OAuth route in every environment.
+ * Keeping one browser-style flow avoids exposing transient H5 bridge failures
+ * to users inside the Lark WebView.
  */
-export async function startLogin(): Promise<void> {
+export function startLogin(): void {
   if (loginInFlight) return;
   loginInFlight = true;
-
-  if (!isLarkClient(window.navigator.userAgent)) {
-    window.location.assign("/api/oauth/lark/start");
-    loginInFlight = false;
-    return;
-  }
-
-  try {
-    const bridge = await waitForLarkSdkReady({
-      sdk: window.h5sdk,
-      getBridge: () => window.tt,
-    });
-    if (!bridge?.requestAccess && !bridge?.requestAuthCode) {
-      throw new Error("Lark H5 SDK is not available");
-    }
-    await startLarkInAppLogin(bridge);
-  } catch (error) {
-    // This function is now called only from an explicit user action. If the
-    // in-app bridge is unavailable, continue with the regular OAuth flow so
-    // the login button always has a working recovery path.
-    console.warn("[Lark Auth] In-app login failed; using OAuth fallback", error);
-    window.location.assign("/api/oauth/lark/start");
-  } finally {
-    loginInFlight = false;
-  }
+  window.location.assign("/api/oauth/lark/start");
+  loginInFlight = false;
 }

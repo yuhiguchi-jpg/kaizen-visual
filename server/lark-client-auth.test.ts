@@ -65,16 +65,10 @@ describe("Lark in-app access request", () => {
     warn.mockRestore();
   });
 
-  it("falls back to OAuth when a user-started in-app access request fails", async () => {
+  it("starts the same OAuth flow inside Lark without calling the H5 bridge", () => {
     const assign = vi.fn();
-    const requestAccess = vi.fn((options) => {
-      options.fail(new Error("cannot find pc bridge"));
-    });
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ appId: "cli_test_app", state: "csrf-state" }),
-    });
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const requestAccess = vi.fn();
+    const fetchMock = vi.fn();
 
     vi.stubGlobal("fetch", fetchMock);
     vi.stubGlobal("window", {
@@ -85,17 +79,28 @@ describe("Lark in-app access request", () => {
     });
 
     try {
-      await startLogin();
+      startLogin();
 
-      expect(requestAccess).toHaveBeenCalledTimes(2);
+      expect(requestAccess).not.toHaveBeenCalled();
+      expect(fetchMock).not.toHaveBeenCalled();
       expect(assign).toHaveBeenCalledWith("/api/oauth/lark/start");
-      expect(warn).toHaveBeenCalledWith(
-        "[Lark Auth] In-app login failed; using OAuth fallback",
-        expect.any(Error),
-      );
     } finally {
       vi.unstubAllGlobals();
-      warn.mockRestore();
+    }
+  });
+
+  it("starts the same OAuth flow in an ordinary browser", () => {
+    const assign = vi.fn();
+    vi.stubGlobal("window", {
+      navigator: { userAgent: "Mozilla/5.0 Chrome/126.0.0.0" },
+      location: { assign },
+    });
+
+    try {
+      startLogin();
+      expect(assign).toHaveBeenCalledWith("/api/oauth/lark/start");
+    } finally {
+      vi.unstubAllGlobals();
     }
   });
 

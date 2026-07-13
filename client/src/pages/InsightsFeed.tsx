@@ -65,7 +65,7 @@ function InsightComments({ insightId, commentCount, currentUserId, likeAction, d
   return (
     <div className="mt-5">
       <div data-insight-actions className="flex items-center justify-between gap-3 border-t border-border/60 pt-4">
-        <div data-insight-engagement className="flex min-w-0 flex-nowrap items-center gap-2">
+        <div data-insight-engagement className="inline-flex min-w-0 shrink-0 flex-nowrap items-center gap-2">
           {likeAction}
           <Button
             type="button"

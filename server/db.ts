@@ -28,6 +28,17 @@ export async function getDb() {
   return _db;
 }
 
+function isConfiguredAdmin(openId: string): boolean {
+  if (openId === ENV.ownerOpenId) return true;
+
+  const normalized = openId.startsWith("lark:") ? openId.slice(5) : openId;
+  return ENV.larkAdminUserIds
+    .split(",")
+    .map(value => value.trim())
+    .filter(Boolean)
+    .some(value => value === openId || value === normalized || `lark:${value}` === openId);
+}
+
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
@@ -65,7 +76,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
+    } else if (isConfiguredAdmin(user.openId)) {
       values.role = 'admin';
       updateSet.role = 'admin';
     }

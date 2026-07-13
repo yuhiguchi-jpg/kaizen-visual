@@ -74,14 +74,14 @@ export default function DashboardLayout({
             <div className="flex flex-col gap-4">
               <p className="eyebrow">Welcome back</p>
               <h2 className="page-title text-3xl font-semibold">チームの知恵へ<br />アクセスする</h2>
-              <p className="text-sm leading-7 text-muted-foreground">Manusアカウントでログインすると、気づきの投稿や改善事例の共有を始められます。</p>
+              <p className="text-sm leading-7 text-muted-foreground">Larkアカウントでログインすると、気づきの投稿や改善事例の共有を始められます。Lark内では画面を移動せずにログインできます。</p>
           </div>
           <Button
-            onClick={() => startLogin()}
+            onClick={() => void startLogin()}
             size="lg"
             className="w-full h-12 rounded-xl shadow-[0_14px_30px_-15px_rgba(29,78,216,.55)]"
           >
-            Manusでログイン
+            Larkでログイン
           </Button>
           </div>
         </div>

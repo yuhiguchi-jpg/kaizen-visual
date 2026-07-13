@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import { formatReversedDisplayName } from "@shared/displayName";
 import { INSIGHT_GENRES, type InsightGenre } from "@shared/insightGenres";
 import { Lightbulb, PenLine, Search, Trash2, UserRound, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -94,9 +95,9 @@ export default function InsightsFeed() {
           ) : data.map(item => (
             <article key={item.id} className="editorial-card rounded-[1.5rem] border border-white/80 p-5 sm:p-7">
               <div className="flex gap-4">
-                <Avatar className="h-10 w-10 border border-white shadow-sm"><AvatarFallback className="bg-accent font-semibold text-primary">{item.authorName.charAt(0)}</AvatarFallback></Avatar>
+                <Avatar className="h-10 w-10 border border-white shadow-sm"><AvatarFallback className="bg-accent font-semibold text-primary">{formatReversedDisplayName(item.authorName, "メ").charAt(0)}</AvatarFallback></Avatar>
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{item.authorName}</p><span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-primary">{item.genre}</span></div><time className="text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>
+                  <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{formatReversedDisplayName(item.authorName, "メンバー")}</p><span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-primary">{item.genre}</span></div><time className="text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>
                   <p className="mt-4 whitespace-pre-wrap text-[15px] leading-8 text-foreground/90">{item.content}</p>
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap gap-2">{reactions.map(reaction => { const active = item.myReactions.includes(reaction.key); const count = item.reactionCounts[reaction.key]; return <button key={reaction.key} title={reaction.label} aria-pressed={active} onClick={() => toggle.mutate({ insightId: item.id, reaction: reaction.key })} className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-medium ${active ? "border-primary/25 bg-accent text-primary shadow-sm" : "border-border/70 bg-white/50 text-muted-foreground hover:bg-white"}`}><span aria-hidden>{reaction.emoji}</span><span>{count}</span></button>; })}</div>

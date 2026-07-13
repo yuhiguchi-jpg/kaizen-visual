@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import { formatReversedDisplayName } from "@shared/displayName";
 import {
   clampImprovementImageZoom,
   IMPROVEMENT_IMAGE_ZOOM,
@@ -177,7 +178,7 @@ export default function ImprovementsLibrary() {
                         {canDelete && <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="mr-2 h-3.5 w-3.5" />削除</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>この改善事例を削除しますか？</AlertDialogTitle><AlertDialogDescription>「{item.title}」をライブラリから削除します。この操作は取り消せません。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>キャンセル</AlertDialogCancel><AlertDialogAction onClick={() => removeCase.mutate({ id: item.id })} disabled={removeCase.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">削除する</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
                       </div>}
 
-                      <div className="mt-4 flex items-center justify-between"><div className="flex items-center gap-2"><Avatar className="h-7 w-7"><AvatarFallback className="bg-accent text-[10px] text-primary">{(item.authorName || "メ").charAt(0)}</AvatarFallback></Avatar><span className="text-xs text-muted-foreground">{item.authorName || "メンバー"}</span></div><time className="text-[11px] text-muted-foreground">{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString("ja-JP", { month: "short", day: "numeric" }) : ""}</time></div>
+                      <div className="mt-4 flex items-center justify-between"><div className="flex items-center gap-2"><Avatar className="h-7 w-7"><AvatarFallback className="bg-accent text-[10px] text-primary">{formatReversedDisplayName(item.authorName, "メ").charAt(0)}</AvatarFallback></Avatar><span className="text-xs text-muted-foreground">{formatReversedDisplayName(item.authorName, "メンバー")}</span></div><time className="text-[11px] text-muted-foreground">{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString("ja-JP", { month: "short", day: "numeric" }) : ""}</time></div>
                     </div>
                   </article>
                 );

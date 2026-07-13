@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { clampImprovementImageZoom } from "../shared/improvementLibrary";
+import { deleteImprovementCase } from "./db";
 import {
   buildImprovementImagePrompt,
   canDeleteImprovementCase,
@@ -66,6 +67,10 @@ describe("buildImprovementImagePrompt", () => {
 });
 
 describe("improvement case deletion authorization", () => {
+  it("exports the database deletion helper used by the router", () => {
+    expect(deleteImprovementCase).toBeTypeOf("function");
+  });
+
   it("allows only the author to delete a case", () => {
     expect(canDeleteImprovementCase({ authorId: 12 }, 12)).toBe(true);
     expect(canDeleteImprovementCase({ authorId: 12 }, 99)).toBe(false);

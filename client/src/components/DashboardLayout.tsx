@@ -25,6 +25,7 @@ import { formatDisplayName } from "@shared/displayName";
 import { BookOpen, Home, Lightbulb, LogOut, PanelLeft, PenLine, PlusCircle } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
+import AppBrand from "./AppBrand";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
@@ -65,7 +66,7 @@ export default function DashboardLayout({
       <div className="min-h-screen grid lg:grid-cols-[1.15fr_.85fr] bg-[#f5f7fb]">
         <div className="hidden lg:flex relative overflow-hidden bg-[#163e8a] text-white p-14 flex-col justify-between">
           <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(circle at 20% 20%, #7aa7ff 0 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
-          <div className="relative flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10"><span className="knowledge-mark knowledge-mark-light" aria-hidden /></div><span className="font-semibold tracking-[0.18em] text-sm">KAIZEN VISION</span></div>
+          <AppBrand inverse className="relative text-white" />
           <div className="relative max-w-xl"><p className="text-[#bcd2ff] text-xs tracking-[0.2em] font-semibold mb-6">SMALL INSIGHTS, LASTING CHANGE</p><h1 className="font-serif text-5xl leading-[1.35] tracking-tight">小さな気づきを、<br />組織の知恵に。</h1><p className="mt-8 text-white/65 leading-8 max-w-lg">現場で生まれた発見と改善を、チームの誰もが学べる資産として積み重ねる場所です。</p></div>
           <p className="relative text-xs text-white/40">Knowledge grows when it is shared.</p>
         </div>
@@ -177,9 +178,7 @@ function DashboardLayoutContent({
                 <PanelLeft className="h-4 w-4 text-muted-foreground" />
               </button>
               {!isCollapsed ? (
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="flex items-center gap-2"><span className="knowledge-mark" aria-hidden /><span className="font-semibold tracking-[0.12em] text-xs truncate">KAIZEN VISION</span></div>
-                </div>
+                <AppBrand compact className="min-w-0" />
               ) : null}
             </div>
           </SidebarHeader>

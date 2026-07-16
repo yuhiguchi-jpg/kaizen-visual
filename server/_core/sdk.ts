@@ -33,6 +33,7 @@ function buildCronUser(session: SessionPayload): AuthenticatedUser {
     email: null,
     loginMethod: null,
     role: "user",
+    isInsightReminderExcluded: false,
     createdAt: now,
     updatedAt: now,
     lastSignedIn: now,

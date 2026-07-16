@@ -127,6 +127,26 @@ export type MissingInsightUser = {
   openId: string;
 };
 
+type InsightReminderCandidate = {
+  id: number;
+  name: string | null;
+  openId: string;
+  isInsightReminderExcluded: boolean;
+};
+
+export function filterMissingInsightUsers(
+  userRows: InsightReminderCandidate[],
+  submittedUserIds: Set<number>,
+): MissingInsightUser[] {
+  return userRows
+    .filter(row => !row.isInsightReminderExcluded && !submittedUserIds.has(row.id))
+    .map(row => ({
+      id: row.id,
+      name: row.name?.trim() || "名前未設定のメンバー",
+      openId: row.openId,
+    }));
+}
+
 export async function listUsersMissingInsightBetween(
   startUtc: Date,
   endUtc: Date,
@@ -136,7 +156,12 @@ export async function listUsersMissingInsightBetween(
 
   const [userRows, submittedRows] = await Promise.all([
     db
-      .select({ id: users.id, name: users.name, openId: users.openId })
+      .select({
+        id: users.id,
+        name: users.name,
+        openId: users.openId,
+        isInsightReminderExcluded: users.isInsightReminderExcluded,
+      })
       .from(users)
       .where(eq(users.role, "user"))
       .orderBy(asc(users.name)),
@@ -147,13 +172,7 @@ export async function listUsersMissingInsightBetween(
   ]);
 
   const submittedUserIds = new Set(submittedRows.map(row => row.authorId));
-  return userRows
-    .filter(row => !submittedUserIds.has(row.id))
-    .map(row => ({
-      id: row.id,
-      name: row.name?.trim() || "名前未設定のメンバー",
-      openId: row.openId,
-    }));
+  return filterMissingInsightUsers(userRows, submittedUserIds);
 }
 
 export async function getScheduledJobByTaskUid(taskUid: string) {

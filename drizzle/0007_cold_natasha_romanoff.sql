@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `isInsightReminderExcluded` boolean DEFAULT false NOT NULL;

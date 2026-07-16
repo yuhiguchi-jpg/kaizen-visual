@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { printImprovementImage } from "@/lib/improvementImagePrint";
 import { trpc } from "@/lib/trpc";
 import { formatDisplayName } from "@shared/displayName";
 import {
@@ -33,6 +34,7 @@ import {
   Minus,
   Plus,
   PlusCircle,
+  Printer,
   RotateCcw,
   Search,
   Trash2,
@@ -84,6 +86,12 @@ export default function ImprovementsLibrary() {
 
   const changeZoom = (amount: number) => {
     setZoom(current => clampImprovementImageZoom(current + amount));
+  };
+
+  const printImage = (image: ViewerImage) => {
+    if (!printImprovementImage(image)) {
+      toast.error("印刷画面を開けませんでした。ブラウザのポップアップ許可をご確認ください。");
+    }
   };
 
   return (
@@ -176,6 +184,7 @@ export default function ImprovementsLibrary() {
                     }
                     actions={
                       <>
+                        {item.imageUrl && <Button type="button" variant="outline" size="sm" onClick={() => printImage({ src: item.imageUrl!, title: item.title })} className="rounded-lg bg-white/60"><Printer className="mr-2 h-3.5 w-3.5" />印刷</Button>}
                         {item.workUrl && <Button asChild variant="outline" size="sm" className="rounded-lg bg-white/60"><a href={item.workUrl} target="_blank" rel="noopener noreferrer">制作物を開く<ExternalLink className="ml-2 h-3.5 w-3.5" /></a></Button>}
                         {canDelete && <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="mr-2 h-3.5 w-3.5" />削除</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>この改善事例を削除しますか？</AlertDialogTitle><AlertDialogDescription>「{item.title}」をライブラリから削除します。この操作は取り消せません。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>キャンセル</AlertDialogCancel><AlertDialogAction onClick={() => removeCase.mutate({ id: item.id })} disabled={removeCase.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">削除する</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
                       </>
@@ -191,7 +200,7 @@ export default function ImprovementsLibrary() {
       <Dialog open={Boolean(viewerImage)} onOpenChange={open => { if (!open) closeViewer(); }}>
         <DialogContent showCloseButton={false} className="block overflow-hidden rounded-none border-0 bg-slate-950 p-0 text-white shadow-none" style={{ width: "100vw", maxWidth: "none", height: "100dvh" }}>
           <DialogTitle className="sr-only">{viewerImage?.title ?? "改善事例画像"}の全画面表示</DialogTitle>
-          <DialogDescription className="sr-only">拡大、縮小、リセット操作を使って画像を確認できます。</DialogDescription>
+          <DialogDescription className="sr-only">拡大、縮小、リセット、印刷操作を使って画像を確認できます。</DialogDescription>
 
           <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-4 bg-gradient-to-b from-black/80 to-transparent p-4 pb-10 sm:p-6 sm:pb-12">
             <div className="min-w-0 pt-1"><p className="truncate text-sm font-semibold sm:text-base">{viewerImage?.title}</p><p className="mt-1 text-xs text-white/65">画像上でホイール操作でも拡大・縮小できます</p></div>
@@ -209,6 +218,8 @@ export default function ImprovementsLibrary() {
               <Button type="button" variant="ghost" size="icon" onClick={() => changeZoom(IMPROVEMENT_IMAGE_ZOOM.step)} disabled={zoom >= IMPROVEMENT_IMAGE_ZOOM.max} aria-label="拡大" className="rounded-xl text-white hover:bg-white/15 hover:text-white disabled:text-white/30"><Plus className="h-5 w-5" /></Button>
               <div className="mx-1 h-6 w-px bg-white/15" />
               <Button type="button" variant="ghost" size="sm" onClick={() => setZoom(1)} disabled={zoom === 1} className="rounded-xl px-3 text-white hover:bg-white/15 hover:text-white disabled:text-white/30"><RotateCcw className="mr-2 h-4 w-4" />リセット</Button>
+              <div className="mx-1 h-6 w-px bg-white/15" />
+              <Button type="button" variant="ghost" size="sm" onClick={() => viewerImage && printImage(viewerImage)} className="rounded-xl px-3 text-white hover:bg-white/15 hover:text-white"><Printer className="mr-2 h-4 w-4" />印刷</Button>
             </div>
           </div>
         </DialogContent>

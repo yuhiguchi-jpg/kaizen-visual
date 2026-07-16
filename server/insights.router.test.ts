@@ -8,13 +8,20 @@ const dbMocks = vi.hoisted(() => ({
   deleteInsightComment: vi.fn(),
   getInsight: vi.fn(),
   getInsightComment: vi.fn(),
+  getInsightWithAuthor: vi.fn(),
   insightExists: vi.fn(),
   listInsightComments: vi.fn(),
   listInsights: vi.fn(),
   toggleInsightLike: vi.fn(),
 }));
 
+const notificationMocks = vi.hoisted(() => ({
+  notifyNewInsight: vi.fn(),
+  notifyNewInsightComment: vi.fn(),
+}));
+
 vi.mock("./db", () => dbMocks);
+vi.mock("./insightLarkNotifications", () => notificationMocks);
 
 import { insightsRouter } from "./routers/insights";
 
@@ -40,6 +47,36 @@ describe("insights like and comment routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     dbMocks.insightExists.mockResolvedValue(true);
+    dbMocks.getInsightWithAuthor.mockResolvedValue({
+      id: 7,
+      genre: "業務プロセス改善",
+      content: "入力作業を短くしたい",
+      authorId: 99,
+      authorName: "気づき 投稿者",
+    });
+    notificationMocks.notifyNewInsight.mockResolvedValue({ sent: true, messageId: "om_insight" });
+    notificationMocks.notifyNewInsightComment.mockResolvedValue({ sent: true, messageId: "om_comment" });
+  });
+
+  it("notifies Lark after creating a new insight", async () => {
+    dbMocks.createInsight.mockResolvedValue(25);
+
+    const result = await insightsRouter.createCaller(createContext()).create({
+      genre: "業務プロセス改善",
+      content: " 入力作業を短くしたい ",
+    });
+
+    expect(result).toEqual({ id: 25 });
+    expect(dbMocks.createInsight).toHaveBeenCalledWith({
+      authorId: 12,
+      genre: "業務プロセス改善",
+      content: "入力作業を短くしたい",
+    });
+    expect(notificationMocks.notifyNewInsight).toHaveBeenCalledWith({
+      authorName: "テスト 利用者",
+      genre: "業務プロセス改善",
+      content: "入力作業を短くしたい",
+    });
   });
 
   it("toggles a like for the signed-in user", async () => {
@@ -70,6 +107,23 @@ describe("insights like and comment routes", () => {
     const result = await insightsRouter.createCaller(createContext()).addComment({ insightId: 7, content: " 参考になりました " });
     expect(result).toEqual({ id: 31 });
     expect(dbMocks.createInsightComment).toHaveBeenCalledWith(7, 12, "参考になりました");
+    expect(notificationMocks.notifyNewInsightComment).toHaveBeenCalledWith({
+      commenterName: "テスト 利用者",
+      insightAuthorName: "気づき 投稿者",
+      insightGenre: "業務プロセス改善",
+      insightContent: "入力作業を短くしたい",
+      commentContent: "参考になりました",
+    });
+  });
+
+  it("keeps the saved insight successful when Lark reports a notification failure", async () => {
+    dbMocks.createInsight.mockResolvedValue(26);
+    notificationMocks.notifyNewInsight.mockResolvedValue({ sent: false, error: "Lark unavailable" });
+
+    await expect(insightsRouter.createCaller(createContext()).create({
+      genre: "業務プロセス改善",
+      content: "保存を優先する",
+    })).resolves.toEqual({ id: 26 });
   });
 
   it("rejects empty and over-500-character comments", async () => {

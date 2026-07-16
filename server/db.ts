@@ -322,6 +322,24 @@ export async function getInsight(id: number) {
   return rows[0];
 }
 
+export async function getInsightWithAuthor(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const rows = await db
+    .select({
+      id: insights.id,
+      genre: insights.genre,
+      content: insights.content,
+      authorId: insights.authorId,
+      authorName: users.name,
+    })
+    .from(insights)
+    .leftJoin(users, eq(insights.authorId, users.id))
+    .where(eq(insights.id, id))
+    .limit(1);
+  return rows[0];
+}
+
 export async function deleteInsight(id: number, authorId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");

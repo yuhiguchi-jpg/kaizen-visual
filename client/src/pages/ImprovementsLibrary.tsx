@@ -90,7 +90,7 @@ export default function ImprovementsLibrary() {
 
   const printImage = (image: ViewerImage) => {
     if (!printImprovementImage(image)) {
-      toast.error("印刷画面を開けませんでした。ブラウザのポップアップ許可をご確認ください。");
+      toast.error("印刷を開始できませんでした。外部ブラウザでもう一度お試しください。");
     }
   };
 

@@ -101,9 +101,37 @@ export const improvementCases = mysqlTable("improvement_cases", {
   index("improvement_cases_published_idx").on(table.publishedAt),
 ]);
 
+export const scheduledJobs = mysqlTable("scheduled_jobs", {
+  id: int("id").autoincrement().primaryKey(),
+  jobKey: varchar("jobKey", { length: 64 }).notNull(),
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("scheduled_jobs_job_key_unique").on(table.jobKey),
+  uniqueIndex("scheduled_jobs_task_uid_unique").on(table.scheduleCronTaskUid),
+]);
+
+export const scheduledNotificationRuns = mysqlTable("scheduled_notification_runs", {
+  id: int("id").autoincrement().primaryKey(),
+  jobKey: varchar("jobKey", { length: 64 }).notNull(),
+  businessDate: varchar("businessDate", { length: 10 }).notNull(),
+  status: mysqlEnum("status", ["pending", "sent", "skipped", "failed"]).default("pending").notNull(),
+  recipientCount: int("recipientCount").default(0).notNull(),
+  messageId: varchar("messageId", { length: 128 }),
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("scheduled_notification_runs_job_date_unique").on(table.jobKey, table.businessDate),
+  index("scheduled_notification_runs_status_idx").on(table.status),
+]);
+
 export type Insight = typeof insights.$inferSelect;
 export type InsertInsight = typeof insights.$inferInsert;
 export type InsightComment = typeof insightComments.$inferSelect;
 export type InsertInsightComment = typeof insightComments.$inferInsert;
 export type ImprovementCase = typeof improvementCases.$inferSelect;
 export type InsertImprovementCase = typeof improvementCases.$inferInsert;
+export type ScheduledJob = typeof scheduledJobs.$inferSelect;
+export type ScheduledNotificationRun = typeof scheduledNotificationRuns.$inferSelect;

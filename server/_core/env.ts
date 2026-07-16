@@ -8,6 +8,7 @@ export const ENV = {
   larkAppSecret: process.env.LARK_APP_SECRET ?? "",
   larkRedirectUri: process.env.LARK_REDIRECT_URI ?? "",
   larkAdminUserIds: process.env.LARK_ADMIN_USER_IDS ?? "",
+  larkDailyInsightChatId: process.env.LARK_DAILY_INSIGHT_CHAT_ID ?? "",
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",

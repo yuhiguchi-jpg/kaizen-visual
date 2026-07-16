@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, like, or, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, like, lt, or, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   improvementCases,
@@ -9,6 +9,8 @@ import {
   InsertImprovementCase,
   InsertInsight,
   InsertUser,
+  scheduledJobs,
+  scheduledNotificationRuns,
   users,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -117,6 +119,122 @@ export async function createInsight(input: InsertInsight) {
   if (!db) throw new Error("Database is not available");
   const result = await db.insert(insights).values(input);
   return Number(result[0].insertId);
+}
+
+export type MissingInsightUser = {
+  id: number;
+  name: string;
+  openId: string;
+};
+
+export async function listUsersMissingInsightBetween(
+  startUtc: Date,
+  endUtc: Date,
+): Promise<MissingInsightUser[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+
+  const [userRows, submittedRows] = await Promise.all([
+    db
+      .select({ id: users.id, name: users.name, openId: users.openId })
+      .from(users)
+      .where(eq(users.role, "user"))
+      .orderBy(asc(users.name)),
+    db
+      .select({ authorId: insights.authorId })
+      .from(insights)
+      .where(and(gte(insights.createdAt, startUtc), lt(insights.createdAt, endUtc))),
+  ]);
+
+  const submittedUserIds = new Set(submittedRows.map(row => row.authorId));
+  return userRows
+    .filter(row => !submittedUserIds.has(row.id))
+    .map(row => ({
+      id: row.id,
+      name: row.name?.trim() || "名前未設定のメンバー",
+      openId: row.openId,
+    }));
+}
+
+export async function getScheduledJobByTaskUid(taskUid: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const rows = await db
+    .select()
+    .from(scheduledJobs)
+    .where(eq(scheduledJobs.scheduleCronTaskUid, taskUid))
+    .limit(1);
+  return rows[0];
+}
+
+export async function upsertScheduledJob(jobKey: string, taskUid?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db
+    .insert(scheduledJobs)
+    .values({ jobKey, scheduleCronTaskUid: taskUid ?? null })
+    .onDuplicateKeyUpdate({
+      set: {
+        ...(taskUid ? { scheduleCronTaskUid: taskUid } : {}),
+        updatedAt: new Date(),
+      },
+    });
+}
+
+export async function getScheduledNotificationRun(jobKey: string, businessDate: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const rows = await db
+    .select()
+    .from(scheduledNotificationRuns)
+    .where(and(
+      eq(scheduledNotificationRuns.jobKey, jobKey),
+      eq(scheduledNotificationRuns.businessDate, businessDate),
+    ))
+    .limit(1);
+  return rows[0];
+}
+
+export async function beginScheduledNotificationRun(jobKey: string, businessDate: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db
+    .insert(scheduledNotificationRuns)
+    .values({ jobKey, businessDate, status: "pending" })
+    .onDuplicateKeyUpdate({
+      set: {
+        status: "pending",
+        recipientCount: 0,
+        messageId: null,
+        errorMessage: null,
+        updatedAt: new Date(),
+      },
+    });
+}
+
+export async function finishScheduledNotificationRun(input: {
+  jobKey: string;
+  businessDate: string;
+  status: "sent" | "skipped" | "failed";
+  recipientCount: number;
+  messageId?: string | null;
+  errorMessage?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db
+    .update(scheduledNotificationRuns)
+    .set({
+      status: input.status,
+      recipientCount: input.recipientCount,
+      messageId: input.messageId ?? null,
+      errorMessage: input.errorMessage ?? null,
+      updatedAt: new Date(),
+    })
+    .where(and(
+      eq(scheduledNotificationRuns.jobKey, input.jobKey),
+      eq(scheduledNotificationRuns.businessDate, input.businessDate),
+    ));
 }
 
 export type InsightFilters = {

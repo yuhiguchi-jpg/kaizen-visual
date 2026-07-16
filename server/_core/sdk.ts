@@ -10,16 +10,36 @@ import { ENV } from "./env";
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.length > 0;
 
+const CRON_OPEN_ID_PREFIX = "cron_";
+
 export type SessionPayload = {
   openId: string;
   appId: string;
   name: string;
+  taskUid?: string;
 };
 
 export type AuthenticatedUser = User & {
   taskUid?: string;
   isCron?: boolean;
 };
+
+function buildCronUser(session: SessionPayload): AuthenticatedUser {
+  const now = new Date();
+  return {
+    id: -1,
+    openId: session.openId,
+    name: session.name || "Manus Scheduled Task",
+    email: null,
+    loginMethod: null,
+    role: "user",
+    createdAt: now,
+    updatedAt: now,
+    lastSignedIn: now,
+    taskUid: session.taskUid,
+    isCron: true,
+  };
+}
 
 class SDKServer {
   private parseCookies(cookieHeader: string | undefined) {
@@ -60,6 +80,7 @@ class SDKServer {
       openId: payload.openId,
       appId: payload.appId,
       name: payload.name,
+      ...(payload.taskUid ? { taskUid: payload.taskUid } : {}),
     })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
       .setIssuedAt(Math.floor(issuedAt / 1000))
@@ -76,7 +97,7 @@ class SDKServer {
       const { payload } = await jwtVerify(cookieValue, this.getSessionSecret(), {
         algorithms: ["HS256"],
       });
-      const { openId, appId, name } = payload as Record<string, unknown>;
+      const { openId, appId, name, taskUid } = payload as Record<string, unknown>;
 
       if (
         !isNonEmptyString(openId) ||
@@ -86,7 +107,12 @@ class SDKServer {
         return null;
       }
 
-      return { openId, appId, name };
+      return {
+        openId,
+        appId,
+        name,
+        taskUid: isNonEmptyString(taskUid) ? taskUid : undefined,
+      };
     } catch (error) {
       console.warn("[Auth] Lark session verification failed", String(error));
       return null;
@@ -98,7 +124,16 @@ class SDKServer {
     const sessionToken = cookies.get(COOKIE_NAME);
 
     const session = await this.verifySession(sessionToken);
-    if (!session || !session.openId.startsWith("lark:")) {
+    if (!session) {
+      throw ForbiddenError("Invalid Lark session");
+    }
+
+    if (session.openId.startsWith(CRON_OPEN_ID_PREFIX)) {
+      if (!session.taskUid) throw ForbiddenError("Cron session missing task_uid");
+      return buildCronUser(session);
+    }
+
+    if (!session.openId.startsWith("lark:")) {
       throw ForbiddenError("Invalid Lark session");
     }
 
